@@ -439,8 +439,8 @@ public class RegistrationInfoImpl implements RegistrationInfo {
 
         state = RESOLVED;
         manager.sendEvent(new ComponentEvent(ComponentEvent.COMPONENT_RESOLVED, this));
-        // TODO lazy activation
-        activate();
+        // components are no more automatically activated when resolved. see ComponentManager#start()
+        // activate();
     }
 
     public synchronized void unresolve() {

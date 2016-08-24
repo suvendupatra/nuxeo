@@ -183,4 +183,15 @@ public interface ComponentManager {
 
     void setBlacklist(Set<String> blacklist);
 
+    /**
+     * Activate and start all resolved components. 
+     * @since TODO
+     */
+    void start();
+
+    /**
+     * Stop and deactivate all resolved components. 
+     * @since TODO
+     */
+    void stop();
 }

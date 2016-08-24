@@ -19,9 +19,11 @@
  */
 package org.nuxeo.runtime.model.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +45,11 @@ public class ComponentRegistry {
      */
     protected Map<ComponentName, RegistrationInfoImpl> components;
 
+    /**
+     * The list of resolved components 
+     */
+    protected List<RegistrationInfoImpl> resolved;
+
     /** Map of aliased name to canonical name. */
     protected Map<ComponentName, ComponentName> aliases;
 
@@ -62,6 +69,7 @@ public class ComponentRegistry {
         aliases = new HashMap<ComponentName, ComponentName>();
         requirements = new MappedSet();
         pendings = new MappedSet();
+        resolved = new ArrayList<RegistrationInfoImpl>();
     }
 
     public void destroy() {
@@ -71,6 +79,15 @@ public class ComponentRegistry {
         pendings = null;
     }
 
+    /**
+     * Get the list of resolved components
+     * @since TODO
+     * @return
+     */
+    public List<RegistrationInfoImpl> getResolved() {
+		return resolved;
+	}
+    
     protected ComponentName unaliased(ComponentName name) {
         ComponentName alias = aliases.get(name);
         return alias == null ? name : alias;
@@ -177,6 +194,8 @@ public class ComponentRegistry {
         names.addAll(ri.getAliases());
 
         ri.resolve();
+        resolved.add(ri); // track resolved components
+        
         // try to resolve pending components that are waiting the newly
         // resolved component
         Set<ComponentName> dependsOnMe = new HashSet<ComponentName>();

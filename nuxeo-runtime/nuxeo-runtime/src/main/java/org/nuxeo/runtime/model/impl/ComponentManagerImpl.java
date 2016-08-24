@@ -23,9 +23,11 @@ package org.nuxeo.runtime.model.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,6 +71,10 @@ public class ComponentManagerImpl implements ComponentManager {
         listeners = new ListenerList();
         services = new ConcurrentHashMap<String, RegistrationInfoImpl>();
         blacklist = new HashSet<String>();
+    }
+
+    public final ComponentRegistry getRegistry() {
+    	return reg;
     }
 
     @Override
@@ -362,6 +368,45 @@ public class ComponentManagerImpl implements ComponentManager {
     protected static void handleError(String message, Exception e) {
         log.error(message, e);
         Framework.getRuntime().getWarnings().add(message);
+    }
+
+    @Override
+    public synchronized void start() {
+    	// first activate resolved components
+    	for (RegistrationInfoImpl ri : reg.getResolved()) {
+    		// TODO catch and handle errors
+    		ri.activate();
+    	}
+    	// TODO should we store the started components in the sorted order?
+        List<RegistrationInfoImpl> ris = new ArrayList<RegistrationInfoImpl>(reg.getResolved());
+        // TODO we sort using the old start order sorter (see OSGiRuntimeService.RIApplicationStartedComparator)       
+        Collections.sort(ris, new RIApplicationStartedComparator());
+    	// then start activated components    	
+    	for (RegistrationInfoImpl ri : ris) {
+    		if (ri.isActivated()) {
+    			ri.notifyApplicationStarted(); //TODO call start method
+    		}
+    	}
+    }
+    
+    @Override
+    public synchronized void stop() {
+    	
+    }
+    
+    /**
+     * TODO we use for now the same sorter as OSGIRuntimeService - should be improved later.
+     */
+    protected static class RIApplicationStartedComparator implements Comparator<RegistrationInfo> {
+        @Override
+        public int compare(RegistrationInfo r1, RegistrationInfo r2) {
+            int cmp = Integer.compare(r1.getApplicationStartedOrder(), r2.getApplicationStartedOrder());
+            if (cmp == 0) {
+                // fallback on name order, to be deterministic
+                cmp = r1.getName().getName().compareTo(r2.getName().getName());
+            }
+            return cmp;
+        }
     }
 
 }
