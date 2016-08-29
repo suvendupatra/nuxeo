@@ -53,7 +53,6 @@ import org.nuxeo.runtime.Version;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.api.ServicePassivator;
 import org.nuxeo.runtime.model.ComponentName;
-import org.nuxeo.runtime.model.RegistrationInfo;
 import org.nuxeo.runtime.model.RuntimeContext;
 import org.nuxeo.runtime.model.impl.ComponentPersistence;
 import org.nuxeo.runtime.model.impl.RegistrationInfoImpl;
@@ -453,38 +452,6 @@ public class OSGiRuntimeService extends AbstractRuntimeService implements Framew
         }.processText(expression);
     }
 
-    /**
-     * @deprecated replaced by ComponentManager#start 
-     */
-    @Deprecated
-    protected void notifyComponentsOnStarted() {
-        List<RegistrationInfo> ris = new ArrayList<>(manager.getRegistrations());
-        Collections.sort(ris, new RIApplicationStartedComparator());
-        for (RegistrationInfo ri : ris) {
-            try {
-                ri.notifyApplicationStarted();
-            } catch (RuntimeException e) {
-                log.error("Failed to notify component '" + ri.getName() + "' on application started", e);
-            }
-        }
-    }
-
-    /**
-     * @deprecated replaced by ComponentManager#start 
-     */
-    @Deprecated
-    protected static class RIApplicationStartedComparator implements Comparator<RegistrationInfo> {
-        @Override
-        public int compare(RegistrationInfo r1, RegistrationInfo r2) {
-            int cmp = Integer.compare(r1.getApplicationStartedOrder(), r2.getApplicationStartedOrder());
-            if (cmp == 0) {
-                // fallback on name order, to be deterministic
-                cmp = r1.getName().getName().compareTo(r2.getName().getName());
-            }
-            return cmp;
-        }
-    }
-
     public void fireApplicationStarted() {
         synchronized (this) {
             if (appStarted) {
@@ -503,8 +470,9 @@ public class OSGiRuntimeService extends AbstractRuntimeService implements Framew
         // on this marker component
         deployFrameworkStartedComponent();
         // ============ activate and start components =======
-        //notifyComponentsOnStarted();
         manager.start();
+        // create a snapshot of the started components - TODO should this be optional?
+        manager.snapshot();
         // ==================================================
         // print the startup message
         printStatusMessage();

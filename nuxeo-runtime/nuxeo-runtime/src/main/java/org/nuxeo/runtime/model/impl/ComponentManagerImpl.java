@@ -63,7 +63,21 @@ public class ComponentManagerImpl implements ComponentManager {
 
     protected Set<String> blacklist;
 
+    /**
+     *  the list of started components (sorted according to the start order).
+     *  this list is null if the components were not yet started or were stopped
+     */
+    protected volatile List<RegistrationInfoImpl> started;
+
+    /**
+     * A list of registrations that were deployed while the manager was started.
+     */
+    protected volatile List<RegistrationInfoImpl> stash;
+
     protected ComponentRegistry reg;
+
+    protected ComponentRegistry snapshot;
+
 
     public ComponentManagerImpl(RuntimeService runtime) {
         reg = new ComponentRegistry();
@@ -71,6 +85,7 @@ public class ComponentManagerImpl implements ComponentManager {
         listeners = new ListenerList();
         services = new ConcurrentHashMap<String, RegistrationInfoImpl>();
         blacklist = new HashSet<String>();
+        stash = new ArrayList<RegistrationInfoImpl>();
     }
 
     public final ComponentRegistry getRegistry() {
@@ -80,6 +95,11 @@ public class ComponentManagerImpl implements ComponentManager {
     @Override
     public synchronized Collection<RegistrationInfo> getRegistrations() {
         return new ArrayList<RegistrationInfo>(reg.getComponents());
+    }
+
+    @Override
+    public synchronized Collection<RegistrationInfo> getResolvedRegistrations() {
+    	return new ArrayList<RegistrationInfo>(reg.getResolved());
     }
 
     @Override
@@ -138,6 +158,7 @@ public class ComponentManagerImpl implements ComponentManager {
         listeners = null;
         reg.destroy();
         reg = null;
+        snapshot = null;
     }
 
     @Override
@@ -173,6 +194,12 @@ public class ComponentManagerImpl implements ComponentManager {
                 handleError("Duplicate component name: " + n + " (alias for " + name + ")", null);
                 return;
             }
+        }
+
+        if (isStarted()) { // stash the registration
+        	// should stash before calling attach.
+        	stash.add(ri);
+        	return;
         }
 
         ri.attach(this);
@@ -222,15 +249,11 @@ public class ComponentManagerImpl implements ComponentManager {
         if (ri == null) {
             return null;
         }
-        if (ri.isResolved()) {
-            // activate it first
-            ri.activate();
+        ComponentInstance ci = ri.getComponent();
+        if (ci == null) {
+            log.debug("The component exposing the service " + serviceClass + " is not resolved or not started");
         }
-        if (ri.isActivated()) {
-            return ri.getComponent();
-        }
-        log.debug("The component exposing the service " + serviceClass + " is not resolved or not started");
-        return null;
+        return ci;
     }
 
     @Override
@@ -371,29 +394,120 @@ public class ComponentManagerImpl implements ComponentManager {
     }
 
     @Override
-    public synchronized void start() {
+    public synchronized boolean start() {
+    	if (this.started != null) {
+    		return false;
+    	}
     	// first activate resolved components
     	for (RegistrationInfoImpl ri : reg.getResolved()) {
     		// TODO catch and handle errors
     		ri.activate();
     	}
+
     	// TODO should we store the started components in the sorted order?
         List<RegistrationInfoImpl> ris = new ArrayList<RegistrationInfoImpl>(reg.getResolved());
-        // TODO we sort using the old start order sorter (see OSGiRuntimeService.RIApplicationStartedComparator)       
+        // TODO we sort using the old start order sorter (see OSGiRuntimeService.RIApplicationStartedComparator)
         Collections.sort(ris, new RIApplicationStartedComparator());
-    	// then start activated components    	
+
+    	// then start activated components
     	for (RegistrationInfoImpl ri : ris) {
     		if (ri.isActivated()) {
-    			ri.notifyApplicationStarted(); //TODO call start method
+    			ri.start();
     		}
     	}
+
+    	this.started = ris;
+
+    	return true;
     }
-    
+
     @Override
-    public synchronized void stop() {
-    	
+    public synchronized boolean stop() {
+    	if (this.started == null) {
+    		return false;
+    	}
+
+    	try {
+    		List<RegistrationInfoImpl> list = this.started;
+    		for (int i=list.size()-1;i>=0;i--) {
+    			RegistrationInfoImpl ri = list.get(i);
+    			if (ri.isStarted()) {
+    				list.get(i).stop();
+    			}
+    		}
+
+    		// now deactivate all active components
+    		list = reg.getResolved();
+    		for (int i=list.size()-1;i>=0;i--) {
+    			RegistrationInfoImpl ri = list.get(i);
+    			if (ri.isActivated()) {
+    				ri.deactivate();
+    			}
+    		}
+
+    	} finally {
+    		this.started = null;
+    	}
+
+    	return true;
     }
-    
+
+    @Override
+    public boolean isStarted() {
+    	return this.started != null;
+    }
+
+    @Override
+    public boolean hasSnapshot() {
+    	return this.snapshot != null;
+    }
+
+    @Override
+    public synchronized void snapshot() {
+    	this.snapshot = new ComponentRegistry(reg);
+    }
+
+    @Override
+    public synchronized void restart(boolean reset) {
+    	if (reset) {
+    		this.reset();
+    	} else {
+    		this.stop();
+    	}
+    	this.start();
+    }
+
+    @Override
+    public synchronized boolean reset() {
+    	boolean r = this.stop();
+    	if (snapshot != null) {
+    		this.reg = new ComponentRegistry(snapshot);
+    	}
+    	return r;
+    }
+
+    @Override
+	public synchronized boolean refresh(boolean reset) {
+    	if (this.stash.isEmpty()) {
+    		return false;
+    	}
+    	boolean requireStart;
+    	if (reset) {
+    		requireStart = reset();
+    	} else {
+    		requireStart = stop();
+    	}
+    	List<RegistrationInfoImpl> currentStash = this.stash;
+    	this.stash = new ArrayList<RegistrationInfoImpl>();
+    	for (RegistrationInfoImpl ri : currentStash) {
+    		register(ri);
+    	}
+    	if (requireStart) {
+    		start();
+    	}
+    	return true;
+    }
+
     /**
      * TODO we use for now the same sorter as OSGIRuntimeService - should be improved later.
      */

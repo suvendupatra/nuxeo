@@ -306,6 +306,7 @@ public class RegistrationInfoImpl implements RegistrationInfo {
         }
     }
 
+    @Deprecated
     public synchronized void restart() {
         deactivate();
         activate();
@@ -323,13 +324,18 @@ public class RegistrationInfoImpl implements RegistrationInfo {
         return ((Component) ci).getApplicationStartedOrder();
     }
 
-    @Override
-    public void notifyApplicationStarted() {
+    public synchronized void start() {
+        if (state != ACTIVATED) {
+            return;
+        }
+        state = STARTING;
+    	//TODO fire events?
         if (component != null) {
             Object ci = component.getInstance();
             if (ci instanceof Component) {
                 try {
-                    ((Component) ci).applicationStarted(component);
+                    ((Component) ci).start(component);
+                    state = STARTED;
                 } catch (RuntimeException e) {
                     log.error(String.format("Component %s notification of application started failed: %s",
                             component.getName(), e.getMessage()), e);
@@ -337,6 +343,26 @@ public class RegistrationInfoImpl implements RegistrationInfo {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isStarted() {
+    	return state == STARTED;
+    }
+
+    public synchronized void stop() {
+        if (state != STARTED) {
+            return;
+        }
+        state = STOPPING;
+        // TODO no events are fired for now
+        if (component != null) {
+        	Object ci = component.getInstance();
+        	if (ci instanceof Component) {
+        		((Component) ci).stop(component);
+        	}
+        }
+        state = ACTIVATED;
     }
 
     public synchronized void activate() {

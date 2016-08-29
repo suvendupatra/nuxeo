@@ -40,7 +40,6 @@ import org.nuxeo.runtime.model.ComponentName;
 import org.nuxeo.runtime.model.Extension;
 import org.nuxeo.runtime.model.ExtensionPoint;
 import org.nuxeo.runtime.model.Property;
-import org.nuxeo.runtime.model.RegistrationInfo;
 import org.nuxeo.runtime.model.RuntimeContext;
 import org.nuxeo.runtime.service.TimestampedService;
 import org.osgi.framework.Bundle;
@@ -73,16 +72,7 @@ public class ComponentInstanceImpl implements ComponentInstance {
 
     @Override
     public Object getInstance() {
-        switch (ri.state) {
-        case RegistrationInfo.RESOLVED:
-            // if not already activated activate it now
-            ri.activate();
-            return instance;
-        case RegistrationInfo.ACTIVATED:
-            return instance;
-        default:
-            return null;
-        }
+    	return instance;
     }
 
     public void create() {
@@ -243,6 +233,9 @@ public class ComponentInstanceImpl implements ComponentInstance {
     public <T> T getAdapter(Class<T> adapter) {
         T res = null;
         Object object = getInstance();
+        if (object == null) {
+        	return null;
+        }
         if (object instanceof Adaptable) {
             res = ((Adaptable) object).getAdapter(adapter);
         } else if (adapter.isAssignableFrom(object.getClass())) {

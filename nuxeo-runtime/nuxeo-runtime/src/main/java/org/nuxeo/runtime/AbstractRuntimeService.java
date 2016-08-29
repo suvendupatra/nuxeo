@@ -157,6 +157,7 @@ public abstract class AbstractRuntimeService implements RuntimeService {
         try {
             log.info("Stopping Nuxeo Runtime service " + getName() + "; version: " + getVersion());
             Framework.sendEvent(new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP, this));
+            getComponentManager().stop(); // stop components
             ServicePassivator.passivate()
                              .withQuietDelay(Duration.ofSeconds(0))
                              .monitor()

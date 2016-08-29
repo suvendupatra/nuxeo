@@ -73,13 +73,18 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkEvent;
 
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
-
 /**
  * Abstract base class for test cases that require a test runtime service.
  * <p>
  * The runtime service itself is conveniently available as the <code>runtime</code> instance variable in derived
  * classes.
+ * <p>
+ *
+ * <b>Warning:</b> NXRuntimeTestCase subclasses <b>must</b>
+ * <ul>
+ * <li> not declare they own @Before and @After.
+ * <li> override doSetUp and doTearDown (and postSetUp if needed) instead of setUp and tearDown.
+ * <li> never call deployXXX methods outside the doSetUp method.
  *
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
@@ -114,6 +119,12 @@ public class NXRuntimeTestCase implements RuntimeHarness {
 
     protected boolean restart = false;
 
+    /**
+     * Whether or not the runtime components were started.
+     * This is useful to ensure the runtime is started once.
+     */
+    protected boolean frameworkStarted = false;
+
     @Override
     public boolean isRestart() {
         return restart;
@@ -127,16 +138,28 @@ public class NXRuntimeTestCase implements RuntimeHarness {
 
     protected final TargetResourceLocator targetResourceLocator;
 
+    /**
+     * Set to true when the instance of this class is a JUnit test case.
+     * Set to false when the instance of this class is instantiated by the FeaturesRunner to manage the framework
+     * If the class is a JUnit test case then the runtime components will be started at the end of the setUp method
+     */
+    protected final boolean isTestUnit;
+
+    /**
+     * Used when subclassing to create standalone test cases
+     */
     public NXRuntimeTestCase() {
         targetResourceLocator = new TargetResourceLocator(this.getClass());
+        isTestUnit = true;
     }
 
-    public NXRuntimeTestCase(String name) {
-        this();
-    }
-
+    /**
+     * Used by the features runner to manage the Nuxeo framework
+     * @param clazz
+     */
     public NXRuntimeTestCase(Class<?> clazz) {
         targetResourceLocator = new TargetResourceLocator(clazz);
+        isTestUnit = false;
     }
 
     @Override
@@ -178,13 +201,46 @@ public class NXRuntimeTestCase implements RuntimeHarness {
             throw new UnsupportedOperationException("no bundles available");
         }
         initOsgiRuntime();
+        doSetUp(); // let a chance to the subclasses to contribute bundles and/or components
+        if (isTestUnit) { // if this class is running as a test case start the runtime components
+        	fireFrameworkStarted();
+    }
+        postSetUp();
+    }
+
+    /**
+     * Implementors must override this method instead of {@link #doSetUp()}.
+     * This method should contain all the bundle or component deployments needed by the tests.
+     * Be warned that the components are not yet activated and started.
+     * So you cannot lookup components or service instances. If you need to do this use the {@link #postSetUp()} method
+     */
+    protected void doSetUp() throws Exception {
+    }
+
+    protected void doTearDown() throws Exception {
+    }
+
+    /**
+     * Called after framework was started (at the end of setUp).
+     * Implementors may use this to use deployed services to initialize fields etc.
+     */
+    protected void postSetUp() throws Exception {
     }
 
     /**
      * Fire the event {@code FrameworkEvent.STARTED}.
+     * This will start all the resolved Nuxeo components
+     * @see OSGiRuntimeService#frameworkEvent(FrameworkEvent)
      */
     @Override
     public void fireFrameworkStarted() throws Exception {
+    	if (frameworkStarted) {
+    		// avoid starting twice the runtime (fix situations where tests are starting themselves the runtime)
+    		// If this happens the faulty test should be fixed
+    		//TODO throw an exception?
+    		return;
+    	}
+    	frameworkStarted = true;
         boolean txStarted = !TransactionHelper.isTransactionActiveOrMarkedRollback()
                 && TransactionHelper.startTransaction();
         boolean txFinished = false;
@@ -203,6 +259,7 @@ public class NXRuntimeTestCase implements RuntimeHarness {
 
     @After
     public void tearDown() throws Exception {
+    	doTearDown();
         wipeRuntime();
         if (workingDir != null) {
             if (!restart) {
@@ -274,9 +331,9 @@ public class NXRuntimeTestCase implements RuntimeHarness {
                 return file.toURI().toURL();
             } catch (MalformedURLException cause) {
                 throw new Error("Could not get URL from " + file, cause);
-            }
+                }
         }).toArray(URL[]::new);
-    }
+            }
 
     protected void initUrls() throws Exception {
         ClassLoader classLoader = NXRuntimeTestCase.class.getClassLoader();
@@ -305,6 +362,7 @@ public class NXRuntimeTestCase implements RuntimeHarness {
         // exception is raised during a previous setUp -> tearDown is not called
         // afterwards).
         runtime = null;
+    	frameworkStarted = false;
         if (Framework.getRuntime() != null) {
             Framework.shutdown();
         }

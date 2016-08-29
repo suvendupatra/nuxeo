@@ -84,8 +84,19 @@ public class DefaultComponent implements Component, Adaptable {
     }
 
     @Override
+    @Deprecated
     public void applicationStarted(ComponentContext context) {
         // do nothing by default
+    }
+
+    @Override
+    public void start(ComponentContext context) {
+    	// TODO: delegate for now to applicationStarted
+    	applicationStarted(context);
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
     }
 
     /**

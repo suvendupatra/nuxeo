@@ -52,6 +52,11 @@ public class RuntimeFeature extends SimpleFeature {
      */
     protected final Map<Class<?>, ServiceProvider<?>> serviceProviders;
 
+    /**
+     * track whether or not the components must be reset on tearDown
+     */
+    protected boolean shouldResetComponents;
+
     public RuntimeFeature() {
         serviceProviders = new HashMap<Class<?>, ServiceProvider<?>>();
     }
@@ -150,7 +155,24 @@ public class RuntimeFeature extends SimpleFeature {
 
     @Override
     public void beforeRun(FeaturesRunner runner) throws Exception {
-        harness.fireFrameworkStarted();
+    	// this will make a snapshot of the component registry and will start the components
+    	harness.fireFrameworkStarted();
+    }
+
+
+    @Override
+    public void afterTeardown(FeaturesRunner runner) throws Exception {
+    	if (this.shouldResetComponents) {
+    		harness.getContext().getRuntime().getComponentManager().reset();
+    	}
+    }
+
+    @Override
+    public void beforeMethodRun(FeaturesRunner runner, FrameworkMethod method, Object test) throws Exception {
+    	// refresh with stashed contributions (e.g. those deployed using @LocalDeploy or @Deploy on the test method)
+    	ComponentManager mgr = harness.getContext().getRuntime().getComponentManager();
+    	this.shouldResetComponents = mgr.refresh(true);
+    	mgr.start(); // ensure components are started
     }
 
 }

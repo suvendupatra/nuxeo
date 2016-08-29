@@ -63,7 +63,23 @@ public interface Component extends Extensible, TimestampedService {
 
     /**
      * Notify the component that Nuxeo Framework finished starting all Nuxeo bundles.
+     * @deprecated since the introduction of {@link Component#start(ComponentContext)} and {@link #stop(ComponentContext)} methods
      */
+    @Deprecated
     void applicationStarted(ComponentContext context);
+
+    /**
+     * Start the component. This method is called after all the components were resolved and activated
+     * @param context
+     * @since TODO
+     */
+    void start(ComponentContext context);
+
+    /**
+     * Stop the component.
+     * @param context
+     * @since TODO
+     */
+    void stop(ComponentContext context);
 
 }

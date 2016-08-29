@@ -46,7 +46,7 @@ public class ComponentRegistry {
     protected Map<ComponentName, RegistrationInfoImpl> components;
 
     /**
-     * The list of resolved components 
+     * The list of resolved components
      */
     protected List<RegistrationInfoImpl> resolved;
 
@@ -72,6 +72,14 @@ public class ComponentRegistry {
         resolved = new ArrayList<RegistrationInfoImpl>();
     }
 
+    public ComponentRegistry(ComponentRegistry reg) {
+        components = new HashMap<ComponentName, RegistrationInfoImpl>(reg.components);
+        aliases = new HashMap<ComponentName, ComponentName>(reg.aliases);
+        requirements = new MappedSet(reg.requirements);
+        pendings = new MappedSet(reg.pendings);
+        resolved = new ArrayList<RegistrationInfoImpl>(reg.resolved);
+    }
+
     public void destroy() {
         components = null;
         aliases = null;
@@ -87,7 +95,7 @@ public class ComponentRegistry {
     public List<RegistrationInfoImpl> getResolved() {
 		return resolved;
 	}
-    
+
     protected ComponentName unaliased(ComponentName name) {
         ComponentName alias = aliases.get(name);
         return alias == null ? name : alias;
@@ -195,7 +203,7 @@ public class ComponentRegistry {
 
         ri.resolve();
         resolved.add(ri); // track resolved components
-        
+
         // try to resolve pending components that are waiting the newly
         // resolved component
         Set<ComponentName> dependsOnMe = new HashSet<ComponentName>();
@@ -246,6 +254,20 @@ public class ComponentRegistry {
 
         public MappedSet() {
             map = new HashMap<ComponentName, Set<ComponentName>>();
+        }
+
+        /**
+         * Create a clone of a mapped set (set values are cloned too)
+         * @param mset
+         */
+        public MappedSet(MappedSet mset) {
+        	this ();
+        	for (Map.Entry<ComponentName, Set<ComponentName>> entry : mset.map.entrySet()) {
+        		ComponentName name = entry.getKey();
+        		Set<ComponentName> set = entry.getValue();
+        		HashSet<ComponentName> newSet = new HashSet<ComponentName>(set);
+        		map.put(name, newSet);
+        	}
         }
 
         public Set<ComponentName> get(ComponentName name) {

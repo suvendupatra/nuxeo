@@ -133,6 +133,13 @@ public interface ComponentManager {
     Collection<ComponentName> getActivatingRegistrations();
 
     /**
+     * Gets the component registration that are resolved
+     *
+     * @since TODO
+     */
+    Collection<RegistrationInfo> getResolvedRegistrations();
+
+    /**
      * Gets the components that fail on applicationStarted notification
      *
      * @since 7.4
@@ -184,14 +191,73 @@ public interface ComponentManager {
     void setBlacklist(Set<String> blacklist);
 
     /**
-     * Activate and start all resolved components. 
+     * Activate and start all resolved components. If components were already started do nothing.
+     * @return false if components were already started, true otherwise
      * @since TODO
      */
-    void start();
+    boolean start();
 
     /**
-     * Stop and deactivate all resolved components. 
+     * Stop and deactivate all resolved components. If components were not yet started do nothing
+     * @return false if components were not yet started, true otherwise
      * @since TODO
      */
-    void stop();
+    boolean stop();
+
+    /**
+     * Make a snapshot of the component registry.
+     * When calling restart
+     * @since TODO
+     */
+    void snapshot();
+
+    /**
+     * Reset the registry to the last snapshot and restart the components.
+     * If no snapshot was created then the components will be restarted without changing the registry.
+     * <p>
+     * If the <code>reset</code> argument is true then the registry will be reverted to the last snapshot before starting the components.
+     * @param reset whether or not to revert to the last snapshot
+     * @since TODO
+     */
+    void restart(boolean reset);
+
+    /**
+     * Reset the registry to the last snapshot if any and stop the components (if they are currently started).
+     * After a reset all the components are stopped so we can contribute new components if needed.
+     * You must call {@link #start()} to start again the components
+     * @return true if the components were stopped, false otherwise
+     * @since TODO
+     */
+    boolean reset();
+
+    /**
+     * Refresh the registry using stashed registrations if any.
+     * If the <code>reset</code> argument is true then the registry will be reverted to the last snapshot before applying the stash.
+     * <p>
+     * If the stash is empty it does nothing and return true, otherwise it will:
+     * <ol>
+     * <li> stop the components (if they are started)
+     * <li> revert to the last snapshot (if reset flag is true)
+     * <li> apply the stash (the stash will remain empty after this operation)
+     * <li> start the components (if they was started)
+     * </ol>
+     * @param reset whether or not to revert to the last snapshot
+     * @return false if stash is empty and nothing was done, true otherwise
+     * @since TODO
+     */
+    boolean refresh(boolean reset);
+
+    /**
+     * Tests whether the components were already started.
+     * @return true if components are started, false
+     * @since TODO
+     */
+    boolean isStarted();
+
+    /**
+     * Check if a snapshot was done
+     * @return true if a snapshot already exists, false otherwise
+     * @since TODO
+     */
+    boolean hasSnapshot();
 }

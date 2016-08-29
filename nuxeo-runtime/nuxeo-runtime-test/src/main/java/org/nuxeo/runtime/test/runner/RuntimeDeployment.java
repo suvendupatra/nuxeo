@@ -35,10 +35,8 @@ import javax.inject.Inject;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-
 import org.nuxeo.runtime.model.RuntimeContext;
 import org.nuxeo.runtime.osgi.OSGiRuntimeService;
-
 import org.osgi.framework.Bundle;
 
 import com.google.common.base.Supplier;
@@ -70,6 +68,10 @@ public class RuntimeDeployment {
         }
     });
 
+    /**
+     * @deprectaed we cannot undeploy components while they are started. So we don;t need anymore to store the contexts
+     */
+    @Deprecated
     protected LinkedList<RuntimeContext> contexts = new LinkedList<>();
 
     protected void index(Class<?> clazz) {
@@ -199,6 +201,11 @@ public class RuntimeDeployment {
 
     }
 
+    /**
+     * @deprectaed we cannot undeploy components while they are started.
+     * This was replaced by a component manager restart (which restore the last snapshot)
+     */
+    @Deprecated
     void undeploy() {
         AssertionError errors = new AssertionError("deployment errors");
 
@@ -269,7 +276,10 @@ public class RuntimeDeployment {
             try {
                 base.evaluate();
             } finally {
-                undeploy();
+            	// undeploy cannot be done while the components are started
+            	// RuntimeFeature will do a reset if needed
+            	// see RuntimeFeature.afterTeardown
+                // undeploy();
             }
         }
 
