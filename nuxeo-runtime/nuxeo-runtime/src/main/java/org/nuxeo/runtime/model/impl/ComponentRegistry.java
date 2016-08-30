@@ -19,11 +19,10 @@
  */
 package org.nuxeo.runtime.model.impl;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,9 +45,10 @@ public class ComponentRegistry {
     protected Map<ComponentName, RegistrationInfoImpl> components;
 
     /**
-     * The list of resolved components
+     * The list of resolved components. We need to use a linked hash map preserve the resolve order.
+     * We don't use a simple list to optimize removal by name (used by unregister operations)
      */
-    protected List<RegistrationInfoImpl> resolved;
+    protected LinkedHashMap<ComponentName, RegistrationInfoImpl> resolved;
 
     /** Map of aliased name to canonical name. */
     protected Map<ComponentName, ComponentName> aliases;
@@ -69,7 +69,7 @@ public class ComponentRegistry {
         aliases = new HashMap<ComponentName, ComponentName>();
         requirements = new MappedSet();
         pendings = new MappedSet();
-        resolved = new ArrayList<RegistrationInfoImpl>();
+        resolved = new LinkedHashMap<ComponentName, RegistrationInfoImpl>();
     }
 
     public ComponentRegistry(ComponentRegistry reg) {
@@ -77,7 +77,7 @@ public class ComponentRegistry {
         aliases = new HashMap<ComponentName, ComponentName>(reg.aliases);
         requirements = new MappedSet(reg.requirements);
         pendings = new MappedSet(reg.pendings);
-        resolved = new ArrayList<RegistrationInfoImpl>(reg.resolved);
+        resolved = new LinkedHashMap<ComponentName, RegistrationInfoImpl>(reg.resolved);
     }
 
     public void destroy() {
@@ -92,7 +92,7 @@ public class ComponentRegistry {
      * @since TODO
      * @return
      */
-    public List<RegistrationInfoImpl> getResolved() {
+    public LinkedHashMap<ComponentName, RegistrationInfoImpl> getResolved() {
 		return resolved;
 	}
 
@@ -202,7 +202,7 @@ public class ComponentRegistry {
         names.addAll(ri.getAliases());
 
         ri.resolve();
-        resolved.add(ri); // track resolved components
+        resolved.put(ri.getName(), ri); // track resolved components
 
         // try to resolve pending components that are waiting the newly
         // resolved component
@@ -232,6 +232,7 @@ public class ComponentRegistry {
         Set<ComponentName> reqs = ri.getRequiredComponents();
         ComponentName name = ri.getName();
         ri.unresolve();
+        resolved.remove(name);
         pendings.remove(name);
         if (reqs != null) {
             for (ComponentName req : reqs) {

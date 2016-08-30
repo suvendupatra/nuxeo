@@ -188,11 +188,11 @@ public class NXRuntimeTestCase implements RuntimeHarness {
 
     @Override
     public void start() throws Exception {
-        setUp();
+        startRuntime();
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void startRuntime() throws Exception {
         System.setProperty("org.nuxeo.runtime.testing", "true");
         // super.setUp();
         wipeRuntime();
@@ -201,7 +201,7 @@ public class NXRuntimeTestCase implements RuntimeHarness {
             throw new UnsupportedOperationException("no bundles available");
         }
         initOsgiRuntime();
-        doSetUp(); // let a chance to the subclasses to contribute bundles and/or components
+        setUp(); // let a chance to the subclasses to contribute bundles and/or components
         if (isTestUnit) { // if this class is running as a test case start the runtime components
         	fireFrameworkStarted();
     }
@@ -209,15 +209,19 @@ public class NXRuntimeTestCase implements RuntimeHarness {
     }
 
     /**
-     * Implementors must override this method instead of {@link #doSetUp()}.
+     * Implementors should override this method to setup tests and not the {@link #startRuntime()} method.
      * This method should contain all the bundle or component deployments needed by the tests.
-     * Be warned that the components are not yet activated and started.
-     * So you cannot lookup components or service instances. If you need to do this use the {@link #postSetUp()} method
+     * At the time this method is called the components are not yet started.
+     * If you need to perform component/service lookups use instead the {@link #postSetUp()} method
      */
-    protected void doSetUp() throws Exception {
+    protected void setUp() throws Exception {
     }
 
-    protected void doTearDown() throws Exception {
+    /**
+     * Implementors should override this method to implement any specific test tear down and not the {@link #stopRuntime()} method
+     * @throws Exception
+     */
+    protected void tearDown() throws Exception {
     }
 
     /**
@@ -258,8 +262,8 @@ public class NXRuntimeTestCase implements RuntimeHarness {
     }
 
     @After
-    public void tearDown() throws Exception {
-    	doTearDown();
+    public void stopRuntime() throws Exception {
+    	tearDown();
         wipeRuntime();
         if (workingDir != null) {
             if (!restart) {
@@ -617,6 +621,28 @@ public class NXRuntimeTestCase implements RuntimeHarness {
             files.add(url.toURI().getPath());
         }
         return files;
+    }
+
+
+    /**
+     * Should be called by subclasses after one or more inline deployments are made inside a test method.
+     * Without calling this the inline deployment(s) will not have any effects
+     *
+     * <b>Be Warned</b> that if you reference runtime services or components you should lookup them again after calling this method!
+     */
+    protected void applyInlineDeployments() {
+    	runtime.getComponentManager().refresh(false);
+    	runtime.getComponentManager().start(); // make sure components are started
+    }
+
+    /**
+     * Should be called by subclasses to remove any inline deployments made in the current test method
+     *
+     * <b>Be Warned</b> that if you reference runtime services or components you should lookup them again after calling this method!
+     */
+    protected void removeInlineDeployments() {
+    	runtime.getComponentManager().reset();
+    	runtime.getComponentManager().start();
     }
 
 }

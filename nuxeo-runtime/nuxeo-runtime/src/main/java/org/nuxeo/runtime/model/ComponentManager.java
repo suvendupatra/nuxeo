@@ -133,11 +133,11 @@ public interface ComponentManager {
     Collection<ComponentName> getActivatingRegistrations();
 
     /**
-     * Gets the component registration that are resolved
+     * Gets the resolved component names in the order they were resolved
      *
      * @since TODO
      */
-    Collection<RegistrationInfo> getResolvedRegistrations();
+    Collection<ComponentName> getResolvedRegistrations();
 
     /**
      * Gets the components that fail on applicationStarted notification

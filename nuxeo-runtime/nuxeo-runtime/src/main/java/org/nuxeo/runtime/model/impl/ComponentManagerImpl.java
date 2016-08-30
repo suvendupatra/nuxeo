@@ -98,8 +98,8 @@ public class ComponentManagerImpl implements ComponentManager {
     }
 
     @Override
-    public synchronized Collection<RegistrationInfo> getResolvedRegistrations() {
-    	return new ArrayList<RegistrationInfo>(reg.getResolved());
+    public synchronized Collection<ComponentName> getResolvedRegistrations() {
+    	return new ArrayList<ComponentName>(reg.resolved.keySet());
     }
 
     @Override
@@ -398,22 +398,21 @@ public class ComponentManagerImpl implements ComponentManager {
     	if (this.started != null) {
     		return false;
     	}
+
+    	List<RegistrationInfoImpl> ris = new ArrayList<RegistrationInfoImpl>();
     	// first activate resolved components
-    	for (RegistrationInfoImpl ri : reg.getResolved()) {
+    	for (RegistrationInfoImpl ri : reg.resolved.values()) {
     		// TODO catch and handle errors
     		ri.activate();
+    		ris.add(ri);
     	}
 
-    	// TODO should we store the started components in the sorted order?
-        List<RegistrationInfoImpl> ris = new ArrayList<RegistrationInfoImpl>(reg.getResolved());
         // TODO we sort using the old start order sorter (see OSGiRuntimeService.RIApplicationStartedComparator)
         Collections.sort(ris, new RIApplicationStartedComparator());
 
     	// then start activated components
     	for (RegistrationInfoImpl ri : ris) {
-    		if (ri.isActivated()) {
-    			ri.start();
-    		}
+    		ri.start();
     	}
 
     	this.started = ris;
@@ -437,9 +436,9 @@ public class ComponentManagerImpl implements ComponentManager {
     		}
 
     		// now deactivate all active components
-    		list = reg.getResolved();
-    		for (int i=list.size()-1;i>=0;i--) {
-    			RegistrationInfoImpl ri = list.get(i);
+    		RegistrationInfoImpl[] reverseResolved = reg.resolved.values().toArray(new RegistrationInfoImpl[reg.resolved.size()]);
+    		for (int i=reverseResolved.length-1;i>=0;i--) {
+    			RegistrationInfoImpl ri = reverseResolved[i];
     			if (ri.isActivated()) {
     				ri.deactivate();
     			}
