@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.nuxeo.runtime.ComponentListener;
+import org.nuxeo.runtime.model.impl.DefaultRuntimeContext;
 
 /**
  * @author Bogdan Stefanescu
@@ -79,6 +80,25 @@ public interface ComponentManager {
      * @param name the component name
      */
     void unregister(ComponentName name);
+
+    /**
+     * This method was added only to support unregistering by location which is used by some tests.
+     * If unregistering component API is removed then this method + the deployedFiles map from ComponentRegistry
+     * must be removed too.
+     *
+     * @param sourceId the location from where the component was deployed
+     * @return false if no component was registered from that location, true otherwise
+     * @see DefaultRuntimeContext for more on this
+     * @since TODO
+     */
+    boolean unregisterByLocation(String sourceId);
+
+    /**
+     * Given a source location tests if a component was deployed from that location
+     * @param sourceId
+     * @return
+     */
+    boolean hasComponentFromLocation(String sourceId);
 
     /**
      * Gets the component if there is one having the given name.

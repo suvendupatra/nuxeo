@@ -235,6 +235,12 @@ public interface RegistrationInfo extends Serializable {
     URL getXmlFileUrl();
 
     /**
+     * The id of the content source used to create the registration (usually a StreamRef id)
+     * @return
+     */
+    String getSourceId();
+
+    /**
      * The component notification order for {@link ComponentManager#start()}.
      *
      * @return the order, 1000 by default

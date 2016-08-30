@@ -115,6 +115,8 @@ public class RegistrationInfoImpl implements RegistrationInfo {
 
     URL xmlFileUrl;
 
+    String sourceId;
+
     /**
      * This is used by the component persistence service to identify registration that was dynamically created and
      * persisted by users.
@@ -544,6 +546,11 @@ public class RegistrationInfoImpl implements RegistrationInfo {
     public URL getXmlFileUrl() {
         return xmlFileUrl;
     }
+
+    @Override
+    public String getSourceId() {
+		return sourceId;
+	}
 
     @Override
     public boolean equals(Object obj) {

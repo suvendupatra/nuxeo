@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import org.nuxeo.runtime.RuntimeService;
+import org.nuxeo.runtime.model.impl.DefaultRuntimeContext;
 import org.osgi.framework.Bundle;
 
 /**
@@ -33,6 +34,8 @@ import org.osgi.framework.Bundle;
  * Runtime contexts are used to create components. They provides custom methods to load classes and find resources.
  * <p>
  * Runtime contexts are generally attached to a bundle context (or module deployment context)
+ *
+ * Note that all undeploy methods are deprectaed! see {@link DefaultRuntimeContext} for more information
  *
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
@@ -107,6 +110,7 @@ public interface RuntimeContext extends AutoCloseable {
      *
      * @param url the URL of the XML descriptor
      */
+    @Deprecated
     void undeploy(URL url) throws IOException;
 
     /**
@@ -114,6 +118,7 @@ public interface RuntimeContext extends AutoCloseable {
      *
      * @param ref
      */
+    @Deprecated
     void undeploy(StreamRef ref) throws IOException;
 
     /**
@@ -122,6 +127,7 @@ public interface RuntimeContext extends AutoCloseable {
      * @param url the URL to check
      * @return true it deployed, false otherwise
      */
+    @Deprecated
     boolean isDeployed(URL url);
 
     /**
@@ -130,6 +136,7 @@ public interface RuntimeContext extends AutoCloseable {
      * @param ref
      * @return
      */
+    @Deprecated
     boolean isDeployed(StreamRef ref);
 
     /**
@@ -154,6 +161,7 @@ public interface RuntimeContext extends AutoCloseable {
      *
      * @param location the location of the component to undeploy
      */
+    @Deprecated
     void undeploy(String location);
 
     /**
@@ -162,6 +170,7 @@ public interface RuntimeContext extends AutoCloseable {
      * @param location the component location to check
      * @return true if deployed, false otherwise
      */
+    @Deprecated
     boolean isDeployed(String location);
 
     /**

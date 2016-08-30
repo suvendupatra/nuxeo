@@ -64,20 +64,30 @@ public class ComponentRegistry {
      */
     protected MappedSet pendings;
 
+    /**
+     * Map deployment source ids to component names
+     * This was previously managed by DefaultRuntimeContext - but is no more usable in the original form.
+     * This map is only useful for unregister by location - which is used by some tests.
+     * Remove this if the unregister API will be removed.
+     */
+    protected Map<String, ComponentName> deployedFiles;
+
     public ComponentRegistry() {
         components = new HashMap<ComponentName, RegistrationInfoImpl>();
         aliases = new HashMap<ComponentName, ComponentName>();
         requirements = new MappedSet();
         pendings = new MappedSet();
         resolved = new LinkedHashMap<ComponentName, RegistrationInfoImpl>();
+        deployedFiles = new HashMap<>();
     }
 
     public ComponentRegistry(ComponentRegistry reg) {
-        components = new HashMap<ComponentName, RegistrationInfoImpl>(reg.components);
-        aliases = new HashMap<ComponentName, ComponentName>(reg.aliases);
+        components = new HashMap<>(reg.components);
+        aliases = new HashMap<>(reg.aliases);
         requirements = new MappedSet(reg.requirements);
         pendings = new MappedSet(reg.pendings);
-        resolved = new LinkedHashMap<ComponentName, RegistrationInfoImpl>(reg.resolved);
+        resolved = new LinkedHashMap<>(reg.resolved);
+        deployedFiles = new HashMap<>(reg.deployedFiles);
     }
 
     public void destroy() {
@@ -85,6 +95,7 @@ public class ComponentRegistry {
         aliases = null;
         requirements = null;
         pendings = null;
+        deployedFiles = null;
     }
 
     /**
@@ -143,6 +154,10 @@ public class ComponentRegistry {
         String aliasInfo = al.isEmpty() ? "" : ", aliases=" + al;
         log.info("Registering component: " + name + aliasInfo);
         ri.register();
+        // map the source id with the component name - see ComponentManager.unregisterByLocation
+        if (ri.sourceId != null) {
+        	deployedFiles.put(ri.sourceId, ri.getName());
+        }
         components.put(name, ri);
         for (ComponentName n : al) {
             aliases.put(n, name);

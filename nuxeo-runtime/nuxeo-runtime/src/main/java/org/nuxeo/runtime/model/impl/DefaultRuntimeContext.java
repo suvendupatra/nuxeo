@@ -25,9 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
 
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.io.IOUtils;
@@ -37,7 +34,6 @@ import org.nuxeo.runtime.RuntimeService;
 import org.nuxeo.runtime.RuntimeServiceException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentManager;
-import org.nuxeo.runtime.model.ComponentName;
 import org.nuxeo.runtime.model.RegistrationInfo;
 import org.nuxeo.runtime.model.RuntimeContext;
 import org.nuxeo.runtime.model.StreamRef;
@@ -47,19 +43,30 @@ import org.nuxeo.runtime.osgi.OSGiRuntimeContext;
 import org.osgi.framework.Bundle;
 
 /**
+ * New behavior @since TODO
+ *
+ * As the runtime lifecycle changed there make no sense to unregister components by their own.
+ * The component registry is either reset to a clean state or shutdown.
+ * So methods like unregister by location used in tests make no sense. These methods are preserved yet for compatibility
+ * with some tests but may be removed in future.
+ * Also when a context is destroyed  we unregister all the components the context deployed.
+ * This is also deprecated since the unregister component is deprecated too.
+ * The code inside destroy methpd was removed too since the deployedFiles map was removed.
+ * This map posed problems with the registry snapshot approaches since it was not kept in sync with the registry.
+ *
+ * If unregistering components will be removed completely don't forget to remove {@link ComponentManager#unregisterByLocation(String)} and the {@link ComponentRegistry#deployedFiles}
+ *
+ * Features like studio or IDE which needs unregistering components must use their own mechanism.
+ *
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
 public class DefaultRuntimeContext implements RuntimeContext {
 
 	private static final Log log = LogFactory.getLog(RuntimeContext.class);
 
-	private static final String UTF_8 = "UTF-8";
-
 	protected RuntimeService runtime;
 
 	protected final ComponentDescriptorReader reader;
-
-	protected final Map<String, ComponentName> deployedFiles;
 
 	public DefaultRuntimeContext() {
 		this(Framework.getRuntime());
@@ -68,7 +75,6 @@ public class DefaultRuntimeContext implements RuntimeContext {
 	public DefaultRuntimeContext(RuntimeService runtime) {
 		this.runtime = runtime;
 		reader = new ComponentDescriptorReader();
-		deployedFiles = new Hashtable<String, ComponentName>();
 	}
 
 	public void setRuntime(RuntimeService runtime) {
@@ -78,10 +84,6 @@ public class DefaultRuntimeContext implements RuntimeContext {
 	@Override
 	public RuntimeService getRuntime() {
 		return runtime;
-	}
-
-	public Map<String, ComponentName> getDeployedFiles() {
-		return deployedFiles;
 	}
 
 	@Override
@@ -107,15 +109,13 @@ public class DefaultRuntimeContext implements RuntimeContext {
 	@Override
 	public RegistrationInfo deploy(StreamRef ref) throws IOException {
 		String name = ref.getId();
-		if (deployedFiles.containsKey(name)) {
-			return null;
-		}
 		RegistrationInfoImpl ri = createRegistrationInfo(ref);
 		if (ri == null || ri.name == null) {
 			// not parsed correctly, e.g., faces-config.xml
 			return null;
 		}
 		log.debug("Deploying component from url " + name);
+		ri.sourceId = name;
 		ri.context = this;
 		ri.xmlFileUrl = ref.asURL();
 		if (ri.getBundle() != null) {
@@ -127,36 +127,31 @@ public class DefaultRuntimeContext implements RuntimeContext {
 			}
 		}
 		runtime.getComponentManager().register(ri);
-		deployedFiles.put(name, ri.getName());
 		return ri;
 	}
 
 	@Override
+	@Deprecated
 	public void undeploy(URL url) {
-		ComponentName name = deployedFiles.remove(url.toString());
-		if (name == null) {
-			throw new IllegalArgumentException("not deployed " + url);
-		}
-		runtime.getComponentManager().unregister(name);
+		runtime.getComponentManager().unregisterByLocation(url.toString());
 	}
 
 	@Override
+	@Deprecated
 	public void undeploy(StreamRef ref) {
-		ComponentName name = deployedFiles.remove(ref.getId());
-		if (name == null) {
-			throw new IllegalArgumentException("not deployed " + ref);
-		}
-		runtime.getComponentManager().unregister(name);
+		runtime.getComponentManager().unregisterByLocation(ref.getId());
 	}
 
 	@Override
+	@Deprecated
 	public boolean isDeployed(URL url) {
-		return deployedFiles.containsKey(url.toString());
+		return runtime.getComponentManager().hasComponentFromLocation(url.toString());
 	}
 
 	@Override
+	@Deprecated
 	public boolean isDeployed(StreamRef ref) {
-		return deployedFiles.containsKey(ref.getId());
+		return runtime.getComponentManager().hasComponentFromLocation(ref.getId());
 	}
 
 	@Override
@@ -173,6 +168,7 @@ public class DefaultRuntimeContext implements RuntimeContext {
 	}
 
 	@Override
+	@Deprecated
 	public void undeploy(String location) {
 		URL url = getLocalResource(location);
 		if (url == null) {
@@ -182,6 +178,7 @@ public class DefaultRuntimeContext implements RuntimeContext {
 	}
 
 	@Override
+	@Deprecated
 	public boolean isDeployed(String location) {
 		URL url = getLocalResource(location);
 		if (url != null) {
@@ -194,6 +191,8 @@ public class DefaultRuntimeContext implements RuntimeContext {
 
 	@Override
 	public void destroy() {
+		// do nothing - components are no more unregistered by the context
+		/*
 		Iterator<ComponentName> it = deployedFiles.values().iterator();
 		ComponentManager mgr = runtime.getComponentManager();
 		while (it.hasNext()) {
@@ -201,6 +200,7 @@ public class DefaultRuntimeContext implements RuntimeContext {
 			it.remove();
 			mgr.unregister(name);
 		}
+		*/
 	}
 
 	@Override
