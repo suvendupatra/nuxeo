@@ -25,7 +25,6 @@ import java.net.URL;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.services.resource.ResourceService;
@@ -36,9 +35,8 @@ import org.nuxeo.runtime.test.NXRuntimeTestCase;
  */
 public class ResourceServiceTest extends NXRuntimeTestCase {
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @Override
+    protected void setUp() throws Exception {
         deployContrib("org.nuxeo.runtime.test.tests", "ResourcesContrib.xml");
     }
 

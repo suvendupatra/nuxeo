@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * Contributors:
  *     bstefanescu
  */
@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.runtime.DummyContribution;
 import org.nuxeo.runtime.api.Framework;
@@ -40,14 +39,14 @@ public class TestContributionPersistence extends NXRuntimeTestCase {
 
     protected ContributionPersistenceManager mgr;
 
-    @Before
+    @Override
     public void setUp() throws Exception {
-        super.setUp();
         deployContrib("org.nuxeo.runtime.test.tests", "BaseXPoint.xml");
+    }
 
-        fireFrameworkStarted();
-
-        mgr = Framework.getLocalService(ContributionPersistenceManager.class);
+    @Override
+    protected void postSetUp() throws Exception {
+    	mgr = Framework.getLocalService(ContributionPersistenceManager.class);
     }
 
     @Test
@@ -74,6 +73,8 @@ public class TestContributionPersistence extends NXRuntimeTestCase {
         assertFalse(mgr.isInstalled(c1));
 
         mgr.installContribution(c1);
+        applyInlineDeployments();
+        postSetUp();
 
         assertTrue(mgr.isPersisted(c1));
         assertTrue(mgr.isInstalled(c1));
@@ -87,6 +88,8 @@ public class TestContributionPersistence extends NXRuntimeTestCase {
         assertEquals(2, MyListener.getCounter());
 
         mgr.uninstallContribution(c1);
+        removeInlineDeployments();
+        postSetUp();
 
         assertTrue(mgr.isPersisted(c1));
         assertFalse(mgr.isInstalled(c1));

@@ -73,6 +73,8 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkEvent;
 
+import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+
 /**
  * Abstract base class for test cases that require a test runtime service.
  * <p>

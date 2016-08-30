@@ -22,13 +22,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Map;
-import java.util.Set;
-
 import org.junit.Test;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentInstance;
-import org.nuxeo.runtime.model.ComponentManager;
 import org.nuxeo.runtime.model.ComponentName;
 import org.nuxeo.runtime.model.impl.ComponentManagerImpl;
 import org.nuxeo.runtime.test.NXRuntimeTestCase;
@@ -39,6 +35,9 @@ public class ComponentAliasTest extends NXRuntimeTestCase {
     public void testContributions() throws Exception {
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp3.xml");
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp4.xml");
+
+        applyInlineDeployments();
+
         check(3);
     }
 
@@ -47,6 +46,9 @@ public class ComponentAliasTest extends NXRuntimeTestCase {
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp4.xml");
         // register the required one last
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp3.xml");
+
+        applyInlineDeployments();
+
         check(3);
     }
 
@@ -56,6 +58,9 @@ public class ComponentAliasTest extends NXRuntimeTestCase {
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp4b.xml");
         // the component itself
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp3.xml");
+
+        applyInlineDeployments();
+
         check(1);
     }
 

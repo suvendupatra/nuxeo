@@ -80,6 +80,9 @@ public class TestResourcePublisherService extends ManagementTestCase {
         deployTestContrib(OSGI_BUNDLE_NAME, "management-tests-service.xml");
         deployTestContrib(OSGI_BUNDLE_NAME, "management-tests-contrib.xml");
 
+        applyInlineDeployments();
+        postSetUp();
+
         publisherService.bindResources();
         String qualifiedName = ObjectNameFactory.formatTypeQuery("service");
 

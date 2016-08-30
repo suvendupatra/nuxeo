@@ -21,6 +21,12 @@
 
 package org.nuxeo.runtime;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -32,12 +38,6 @@ import org.nuxeo.runtime.model.ComponentName;
 import org.nuxeo.runtime.model.Extension;
 import org.nuxeo.runtime.test.NXRuntimeTestCase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
@@ -47,27 +47,29 @@ public class ComponentDeploymentTest extends NXRuntimeTestCase {
     public void testContributions() throws Exception {
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp1.xml");
         deployContrib("org.nuxeo.runtime.test.tests", "MyComp2.xml");
+        applyInlineDeployments();
         try {
-            RuntimeService runtime = Framework.getRuntime();
-            ComponentManager mgr = runtime.getComponentManager();
-            assertTrue(mgr.size() > 0);
+        RuntimeService runtime = Framework.getRuntime();
+        ComponentManager mgr = runtime.getComponentManager();
+        assertTrue(mgr.size() > 0);
 
-            ComponentInstance co = runtime.getComponentInstance("service:my.comp1");
-            assertNotNull(co);
-            assertEquals(co.getName(), new ComponentName("service:my.comp1"));
+        ComponentInstance co = runtime.getComponentInstance("service:my.comp1");
+        assertNotNull(co);
+        assertEquals(co.getName(), new ComponentName("service:my.comp1"));
 
-            co = runtime.getComponentInstance("service:my.comp2");
-            assertNotNull(co);
-            assertEquals(co.getName(), new ComponentName("service:my.comp2"));
+        co = runtime.getComponentInstance("service:my.comp2");
+        assertNotNull(co);
+        assertEquals(co.getName(), new ComponentName("service:my.comp2"));
 
-            mgr.unregister(new ComponentName("service:my.comp2"));
-            co = runtime.getComponentInstance("service:my.comp2");
-            assertNull(co);
-            co = runtime.getComponentInstance("service:my.comp1");
-            assertNotNull(co);
+        mgr.unregister(new ComponentName("service:my.comp2"));
+        co = runtime.getComponentInstance("service:my.comp2");
+        assertNull(co);
+        co = runtime.getComponentInstance("service:my.comp1");
+        assertNotNull(co);
         } finally {
             undeployContrib("org.nuxeo.runtime.test.tests", "MyComp2.xml");
             undeployContrib("org.nuxeo.runtime.test.tests", "MyComp1.xml");
+            removeInlineDeployments();
         }
     }
 
@@ -75,6 +77,7 @@ public class ComponentDeploymentTest extends NXRuntimeTestCase {
     public void testStartupStatus() throws Exception {
         deployContrib("org.nuxeo.runtime.test.tests", "CompA.xml");
         deployContrib("org.nuxeo.runtime.test.tests", "CompB.xml");
+        applyInlineDeployments();
         try {
             RuntimeService runtime = Framework.getRuntime();
             ComponentManager mgr = runtime.getComponentManager();
@@ -105,6 +108,7 @@ public class ComponentDeploymentTest extends NXRuntimeTestCase {
         } finally {
             undeployContrib("org.nuxeo.runtime.test.tests", "CompB.xml");
             undeployContrib("org.nuxeo.runtime.test.tests", "CompA.xml");
+            removeInlineDeployments();
         }
     }
 
