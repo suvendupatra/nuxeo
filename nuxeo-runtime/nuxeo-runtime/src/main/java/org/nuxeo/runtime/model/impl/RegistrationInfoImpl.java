@@ -332,18 +332,18 @@ public class RegistrationInfoImpl implements RegistrationInfo {
         }
         state = STARTING;
     	//TODO fire events?
-        if (component != null) {
-            Object ci = component.getInstance();
-            if (ci instanceof Component) {
-                try {
-                    ((Component) ci).start(component);
-                    state = STARTED;
-                } catch (RuntimeException e) {
-                    log.error(String.format("Component %s notification of application started failed: %s",
-                            component.getName(), e.getMessage()), e);
-                    state = START_FAILURE;
-                }
-            }
+        try {
+        	if (component != null) {
+        		Object ci = component.getInstance();
+        		if (ci instanceof Component) {
+        			((Component) ci).start(component);
+        		}
+        	}
+        	state = STARTED;
+        } catch (RuntimeException e) {
+        	log.error(String.format("Component %s notification of application started failed: %s",
+        			component.getName(), e.getMessage()), e);
+        	state = START_FAILURE;
         }
     }
 

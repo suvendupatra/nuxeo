@@ -49,7 +49,7 @@ public class ServiceProvider<T> implements Provider<T> {
     }
 
     public Scope getScope() {
-        return Scopes.SINGLETON;
+        return Scopes.NO_SCOPE;
     }
 
 }

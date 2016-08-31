@@ -281,7 +281,7 @@ public class NXRuntimeTestCase implements RuntimeHarness {
 
     @Override
     public void stop() throws Exception {
-        tearDown();
+        stopRuntime();
     }
 
     @Override

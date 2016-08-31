@@ -168,7 +168,7 @@ public class RuntimeFeature extends SimpleFeature {
     }
 
     @Override
-    public void beforeMethodRun(FeaturesRunner runner, FrameworkMethod method, Object test) throws Exception {
+    public void beforeSetup(FeaturesRunner runner) throws Exception {
     	// refresh with stashed contributions (e.g. those deployed using @LocalDeploy or @Deploy on the test method)
     	ComponentManager mgr = harness.getContext().getRuntime().getComponentManager();
     	this.shouldResetComponents = mgr.refresh(true);

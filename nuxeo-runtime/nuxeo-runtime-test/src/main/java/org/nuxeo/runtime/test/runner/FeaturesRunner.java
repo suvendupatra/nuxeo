@@ -456,6 +456,8 @@ public class FeaturesRunner extends BlockJUnit4ClassRunner {
         return factory.build();
     }
 
+    // TODO: injector is invoked twice: first in beforeSetup and then here
+    /*
     @Override
     protected Statement methodInvoker(FrameworkMethod method, Object test) {
         final Statement actual = super.methodInvoker(method, test);
@@ -469,6 +471,7 @@ public class FeaturesRunner extends BlockJUnit4ClassRunner {
 
         };
     }
+	*/
 
     protected Object underTest;
 
