@@ -47,15 +47,12 @@ public class RuntimeFeature extends SimpleFeature {
 
     protected RuntimeDeployment deployment;
 
+    protected HotDeployer deployer;
+
     /**
      * Providers contributed by other features to override the default service provider used for a nuxeo service.
      */
     protected final Map<Class<?>, ServiceProvider<?>> serviceProviders;
-
-    /**
-     * track whether or not the components must be reset on tearDown
-     */
-    protected boolean shouldResetComponents;
 
     public RuntimeFeature() {
         serviceProviders = new HashMap<Class<?>, ServiceProvider<?>>();
@@ -73,12 +70,18 @@ public class RuntimeFeature extends SimpleFeature {
     public void initialize(FeaturesRunner runner) throws Exception {
         harness = new NXRuntimeTestCase(runner.getTargetTestClass());
         deployment = RuntimeDeployment.onTest(runner);
+        deployer = new HotDeployer(runner, harness);
     }
+
+    public HotDeployer onHotDeploy(HotDeployer.DeployAction action) {
+		return deployer.onDeploy(action);
+	}
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void configure(FeaturesRunner runner, Binder binder) {
         binder.bind(RuntimeHarness.class).toInstance(getHarness());
+        binder.bind(HotDeployer.class).toInstance(deployer);
         for (String svc : Framework.getRuntime().getComponentManager().getServices()) {
             try {
                 Class clazz = Thread.currentThread().getContextClassLoader().loadClass(svc);
@@ -153,26 +156,11 @@ public class RuntimeFeature extends SimpleFeature {
         manager.setBlacklist(blacklist);
     }
 
+
     @Override
     public void beforeRun(FeaturesRunner runner) throws Exception {
     	// this will make a snapshot of the component registry and will start the components
     	harness.fireFrameworkStarted();
-    }
-
-
-    @Override
-    public void afterTeardown(FeaturesRunner runner) throws Exception {
-    	if (this.shouldResetComponents) {
-    		harness.getContext().getRuntime().getComponentManager().reset();
-    	}
-    }
-
-    @Override
-    public void beforeSetup(FeaturesRunner runner) throws Exception {
-    	// refresh with stashed contributions (e.g. those deployed using @LocalDeploy or @Deploy on the test method)
-    	ComponentManager mgr = harness.getContext().getRuntime().getComponentManager();
-    	this.shouldResetComponents = mgr.refresh(true);
-    	mgr.start(); // ensure components are started
     }
 
 }

@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.nuxeo.runtime.model.ComponentManager;
 import org.nuxeo.runtime.model.RuntimeContext;
 import org.nuxeo.runtime.osgi.OSGiRuntimeService;
 import org.osgi.framework.Bundle;
@@ -247,13 +248,13 @@ public class RuntimeDeployment {
         public Statement apply(Statement base, FrameworkMethod method, Object target) {
             RuntimeDeployment deployment = new RuntimeDeployment();
             deployment.index(method.getMethod());
-            return deployment.onStatement(runner, runner.getFeature(RuntimeFeature.class).harness, base);
+            return deployment.onStatement(runner, runner.getFeature(RuntimeFeature.class).harness, method, base);
         }
 
     }
 
-    protected Statement onStatement(FeaturesRunner runner, RuntimeHarness harness, Statement base) {
-        return new DeploymentStatement(runner, harness, base);
+    protected Statement onStatement(FeaturesRunner runner, RuntimeHarness harness, FrameworkMethod method, Statement base) {
+        return new DeploymentStatement(runner, harness, method, base);
     }
 
     protected class DeploymentStatement extends Statement {
@@ -262,17 +263,39 @@ public class RuntimeDeployment {
 
         protected final RuntimeHarness harness;
 
+        // useful for debugging
+        protected final FrameworkMethod method;
+
         protected final Statement base;
 
-        public DeploymentStatement(FeaturesRunner runner, RuntimeHarness harness, Statement base) {
+        public DeploymentStatement(FeaturesRunner runner, RuntimeHarness harness, FrameworkMethod method, Statement base) {
             this.runner = runner;
             this.harness = harness;
+            this.method = method;
             this.base = base;
+        }
+
+        protected void tryDeploy() {
+        	// the registry is updated here and not using before or teardown methods.
+        	// this approach ensure the components are not stopped between tearDown and the next test
+        	// (so that custom feature that relly on the runtime between the two tests are not affected by stopping components)
+        	ComponentManager mgr = harness.getContext().getRuntime().getComponentManager();
+        	// the stash may already contains contribs (from @Setup methods)
+        	if (mgr.hasChanged()) { // first reset the registry if it was changed by the last test
+        		mgr.reset();
+        		// the registry is now stopped
+        	}
+        	// deploy current test contributions if any
+        	deploy(runner, harness);
+        	mgr.refresh(true);
+        	// now the stash is empty
+            mgr.start(); // ensure components are started
         }
 
         @Override
         public void evaluate() throws Throwable {
-            deploy(runner, harness);
+        	// make sure the clear the stash
+        	tryDeploy();
             try {
                 base.evaluate();
             } finally {

@@ -78,6 +78,8 @@ public class ComponentManagerImpl implements ComponentManager {
 
     protected ComponentRegistry snapshot;
 
+    protected volatile boolean isFlushingStash = false;
+    protected volatile boolean changed = false;
 
     public ComponentManagerImpl(RuntimeService runtime) {
         reg = new ComponentRegistry();
@@ -196,7 +198,7 @@ public class ComponentManagerImpl implements ComponentManager {
             }
         }
 
-        if (isStarted()) { // stash the registration
+        if (hasSnapshot() && !isFlushingStash) { // stash the registration
         	// should stash before calling attach.
         	stash.add(ri);
         	return;
@@ -478,8 +480,18 @@ public class ComponentManagerImpl implements ComponentManager {
     }
 
     @Override
+    public boolean hasChanged() {
+    	return this.changed;
+    }
+
+    @Override
     public synchronized void snapshot() {
     	this.snapshot = new ComponentRegistry(reg);
+    }
+
+    @Override
+    public boolean isStashEmpty() {
+    	return stash.isEmpty();
     }
 
     @Override
@@ -495,9 +507,7 @@ public class ComponentManagerImpl implements ComponentManager {
     @Override
     public synchronized boolean reset() {
     	boolean r = this.stop();
-    	if (snapshot != null) {
-    		this.reg = new ComponentRegistry(snapshot);
-    	}
+    	restoreSnapshot();
     	return r;
     }
 
@@ -514,13 +524,30 @@ public class ComponentManagerImpl implements ComponentManager {
     	}
     	List<RegistrationInfoImpl> currentStash = this.stash;
     	this.stash = new ArrayList<RegistrationInfoImpl>();
-    	for (RegistrationInfoImpl ri : currentStash) {
-    		register(ri);
-    	}
+    	applyStash(currentStash);
     	if (requireStart) {
     		start();
     	}
     	return true;
+    }
+
+    protected synchronized void restoreSnapshot() {
+    	if (changed && snapshot != null) {
+    		this.reg = new ComponentRegistry(snapshot);
+    		changed = false;
+    	}
+    }
+
+    protected synchronized void applyStash(List<RegistrationInfoImpl> stash) {
+    	isFlushingStash = true;
+    	try {
+        	for (RegistrationInfoImpl ri : stash) {
+        		register(ri);
+        	}
+    	} finally {
+    		isFlushingStash = false;
+    		changed = true;
+    	}
     }
 
     /**

@@ -18,10 +18,9 @@
  */
 package org.nuxeo.ecm.core.convert.tests;
 
-import org.nuxeo.ecm.core.convert.service.ConversionServiceImpl;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
-import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.LocalDeploy;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
 import org.nuxeo.runtime.test.runner.SimpleFeature;
 
@@ -30,14 +29,6 @@ import org.nuxeo.runtime.test.runner.SimpleFeature;
  */
 @Features(RuntimeFeature.class)
 @Deploy({ "org.nuxeo.ecm.core.api", "org.nuxeo.ecm.core.convert.api", "org.nuxeo.ecm.core.convert" })
+@LocalDeploy({"org.nuxeo.ecm.core.convert:OSGI-INF/convert-service-default-test-config.xml"})
 public class ConvertFeature extends SimpleFeature {
-
-    @Override
-    public void start(FeaturesRunner runner) throws Exception {
-        // do testing configuration
-        // cachesize = -1 (actually 0)
-        // GC interval negative => interpreted as seconds
-        ConversionServiceImpl.setMaxCacheSizeInKB(-1);
-        ConversionServiceImpl.setGCIntervalInMinutes(-1000);
-    }
 }

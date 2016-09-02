@@ -85,6 +85,14 @@ public class FeaturesRunner extends BlockJUnit4ClassRunner {
         return super.getTestClass().getJavaClass();
     }
 
+    /**
+     * May return null if the test class was not yet instantiated
+     * @return
+     */
+    public Object getTargetTestInstance() {
+        return underTest;
+    }
+
     public Path getTargetTestBasepath() {
         return locator.getBasepath();
     }

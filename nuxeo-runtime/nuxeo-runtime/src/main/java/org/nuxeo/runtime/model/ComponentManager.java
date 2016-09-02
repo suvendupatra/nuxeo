@@ -275,9 +275,22 @@ public interface ComponentManager {
     boolean isStarted();
 
     /**
+     * Tests whether components were deployed over the initial snapshot (i.e. the actual registry differs from the snapshot)
+     * If no snapshot was done returns false.
+     * @return
+     */
+    boolean hasChanged();
+
+    /**
      * Check if a snapshot was done
      * @return true if a snapshot already exists, false otherwise
      * @since TODO
      */
     boolean hasSnapshot();
+
+    /**
+     * Tests if the stash uis empty
+     * @return
+     */
+    boolean isStashEmpty();
 }
