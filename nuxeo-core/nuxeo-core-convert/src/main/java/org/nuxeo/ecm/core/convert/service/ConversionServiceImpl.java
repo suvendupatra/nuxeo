@@ -527,8 +527,13 @@ public class ConversionServiceImpl extends DefaultComponent implements Conversio
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        startGC();
+    public void start(ComponentContext context) {
+    	startGC();
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+    	endGC();
     }
 
     protected void startGC() {

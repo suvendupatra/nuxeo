@@ -54,8 +54,6 @@ import org.nuxeo.ecm.core.work.api.WorkQueueDescriptor;
 import org.nuxeo.ecm.core.work.api.WorkQueueMetrics;
 import org.nuxeo.ecm.core.work.api.WorkQueuingDescriptor;
 import org.nuxeo.ecm.core.work.api.WorkSchedulePath;
-import org.nuxeo.runtime.RuntimeServiceEvent;
-import org.nuxeo.runtime.RuntimeServiceListener;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.model.ComponentContext;
@@ -132,11 +130,6 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
     }
 
     protected WorkCompletionSynchronizer completionSynchronizer;
-
-    @Override
-    public void activate(ComponentContext context) {
-        Framework.addListener(new ShutdownListener());
-    }
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -329,8 +322,20 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         init();
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+    	try {
+    		if (!shutdown(10, TimeUnit.SECONDS)) {
+    			log.error("Some processors are still active");
+    		}
+    	} catch (InterruptedException cause) {
+    		Thread.currentThread().interrupt();
+    		log.error("Interrupted during works manager shutdown, continuing runtime shutdown", cause);
+    	}
     }
 
     protected volatile boolean started = false;
@@ -423,24 +428,6 @@ public class WorkManagerImpl extends DefaultComponent implements WorkManager {
         } finally {
             shutdownInProgress = false;
             started = false;
-        }
-    }
-
-    protected class ShutdownListener implements RuntimeServiceListener {
-        @Override
-        public void handleEvent(RuntimeServiceEvent event) {
-            if (RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP != event.id) {
-                return;
-            }
-            Framework.removeListener(this);
-            try {
-                if (!shutdown(10, TimeUnit.SECONDS)) {
-                    log.error("Some processors are still active");
-                }
-            } catch (InterruptedException cause) {
-                Thread.currentThread().interrupt();
-                log.error("Interrupted during works manager shutdown, continuing runtime shutdown", cause);
-            }
         }
     }
 

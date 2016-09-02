@@ -27,8 +27,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrBuilder;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.RuntimeServiceEvent;
-import org.nuxeo.runtime.RuntimeServiceListener;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
@@ -114,27 +112,21 @@ public class RedisComponent extends DefaultComponent implements RedisAdmin {
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         RedisPoolDescriptor config = getConfig();
         if (config == null || config.disabled) {
             return;
         }
-        Framework.addListener(new RuntimeServiceListener() {
-
-            @Override
-            public void handleEvent(RuntimeServiceEvent event) {
-                if (event.id != RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP) {
-                    return;
-                }
-                Framework.removeListener(this);
-                try {
-                    executor.getPool().destroy();
-                } finally {
-                    executor = null;
-                }
-            }
-        });
         handleNewExecutor(config.newExecutor());
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+        try {
+            executor.getPool().destroy();
+        } finally {
+            executor = null;
+        }
     }
 
     @Override

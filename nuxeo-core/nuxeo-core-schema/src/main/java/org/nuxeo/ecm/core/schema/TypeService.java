@@ -119,7 +119,7 @@ public class TypeService extends DefaultComponent {
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         schemaManager.flushPendingsRegistration();
     }
 

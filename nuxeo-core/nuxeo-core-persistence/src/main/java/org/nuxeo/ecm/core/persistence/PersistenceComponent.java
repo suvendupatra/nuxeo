@@ -73,7 +73,7 @@ public class PersistenceComponent extends DefaultComponent implements HibernateC
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         /*
          * Initialize all the persistence units synchronously at startup, otherwise init may end up being called during
          * the first asynchronous event, which means hibernate init may happen in parallel with the main Nuxeo startup

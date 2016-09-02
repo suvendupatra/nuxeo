@@ -30,8 +30,6 @@ import org.nuxeo.ecm.core.api.local.LocalException;
 import org.nuxeo.ecm.core.api.repository.RepositoryManager;
 import org.nuxeo.ecm.core.model.Repository;
 import org.nuxeo.ecm.core.model.Session;
-import org.nuxeo.runtime.RuntimeServiceEvent;
-import org.nuxeo.runtime.RuntimeServiceListener;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentName;
@@ -67,24 +65,15 @@ public class RepositoryService extends DefaultComponent {
         return 100;
     }
 
-    @Override
-    public void activate(ComponentContext context) {
-        Framework.addListener(new RuntimeServiceListener() {
 
-            @Override
-            public void handleEvent(RuntimeServiceEvent event) {
-                if (event.id != RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP) {
-                    return;
-                }
-                Framework.removeListener(this);
-                shutdown();
-            }
-        });
+    @Override
+    public void start(ComponentContext context) {
+        TransactionHelper.runInTransaction(this::initRepositories);
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        TransactionHelper.runInTransaction(this::initRepositories);
+	public void stop(ComponentContext context) {
+    	shutdown();
     }
 
     /**

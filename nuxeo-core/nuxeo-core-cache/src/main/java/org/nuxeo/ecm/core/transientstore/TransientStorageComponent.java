@@ -69,7 +69,8 @@ public class TransientStorageComponent extends DefaultComponent implements Trans
         }
     }
 
-    public void doGC() {
+    @Override
+	public void doGC() {
         stores.values().forEach(TransientStore::doGC);
     }
 
@@ -92,7 +93,7 @@ public class TransientStorageComponent extends DefaultComponent implements Trans
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         for (TransientStoreConfig config : configs.values()) {
             registerStore(config);
         }

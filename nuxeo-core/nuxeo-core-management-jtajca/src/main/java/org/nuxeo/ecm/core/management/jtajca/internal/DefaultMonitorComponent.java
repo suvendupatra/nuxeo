@@ -33,9 +33,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.management.jtajca.ConnectionPoolMonitor;
 import org.nuxeo.ecm.core.management.jtajca.CoreSessionMonitor;
 import org.nuxeo.ecm.core.management.jtajca.Defaults;
-import org.nuxeo.ecm.core.management.jtajca.ConnectionPoolMonitor;
 import org.nuxeo.ecm.core.management.jtajca.TransactionMonitor;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.jtajca.NuxeoConnectionManager;
@@ -85,15 +86,25 @@ public class DefaultMonitorComponent extends DefaultComponent {
     protected Map<String, ConnectionPoolMonitor> poolConnectionMonitors = new HashMap<>();
 
     @Override
-    public void activate(ComponentContext context) {
-        super.activate(context);
+    public void start(ComponentContext context) {
+        RepositoryService repositoryService = Framework.getService(RepositoryService.class);
+        if (repositoryService == null) {
+            // RepositoryService failed to start, no need to go further
+            return;
+        }
+        uninstall();
         install();
     }
 
     @Override
-    public void deactivate(ComponentContext context) {
+    public int getApplicationStartedOrder() {
+        // should deploy after metrics service
+        return ((MetricsServiceImpl) Framework.getRuntime().getComponent(MetricsService.class.getName())).getApplicationStartedOrder() + 1;
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
         uninstall();
-        super.deactivate(context);
     }
 
     protected boolean installed;

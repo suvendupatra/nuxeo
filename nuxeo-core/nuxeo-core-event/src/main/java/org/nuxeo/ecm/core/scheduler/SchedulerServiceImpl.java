@@ -32,9 +32,6 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.RuntimeServiceEvent;
-import org.nuxeo.runtime.RuntimeServiceListener;
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Extension;
@@ -58,7 +55,7 @@ import org.quartz.impl.matchers.GroupMatcher;
  * Due the fact that all jobs are removed when service starts on a node it may be a short period with no schedules in
  * quartz table even other node is running.
  */
-public class SchedulerServiceImpl extends DefaultComponent implements SchedulerService, RuntimeServiceListener {
+public class SchedulerServiceImpl extends DefaultComponent implements SchedulerService {
 
     private static final Log log = LogFactory.getLog(SchedulerServiceImpl.class);
 
@@ -133,20 +130,19 @@ public class SchedulerServiceImpl extends DefaultComponent implements SchedulerS
         }
     }
 
-    @Override
-    public void deactivate(ComponentContext context) {
-        log.debug("Deactivate");
-        shutdownScheduler();
-    }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        Framework.addListener(this);
+    public void start(ComponentContext context) {
         try {
             setupScheduler();
         } catch (IOException | SchedulerException e) {
             throw new NuxeoException(e);
         }
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+        shutdownScheduler();
     }
 
     @Override
@@ -262,15 +258,6 @@ public class SchedulerServiceImpl extends DefaultComponent implements SchedulerS
     @Override
     public boolean unregisterSchedule(Schedule schedule) {
         return unregisterSchedule(schedule.getId());
-    }
-
-    @Override
-    public void handleEvent(RuntimeServiceEvent event) {
-        if (event.id != RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP) {
-            return;
-        }
-        Framework.removeListener(this);
-        shutdownScheduler();
     }
 
 }
