@@ -47,7 +47,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.nuxeo.common.Environment;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -67,7 +66,6 @@ import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.api.model.impl.ListProperty;
 import org.nuxeo.ecm.core.api.model.impl.primitives.ExternalBlobProperty;
-import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.model.Repository;
 import org.nuxeo.ecm.core.repository.RepositoryService;
 import org.nuxeo.ecm.core.schema.SchemaManager;
@@ -82,20 +80,18 @@ import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.reload.ReloadService;
 import org.nuxeo.runtime.test.runner.Deploy;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 @RunWith(FeaturesRunner.class)
 @Features(CoreFeature.class)
 @RepositoryConfig(cleanup = Granularity.METHOD)
 @Deploy({ "org.nuxeo.ecm.core.convert", //
-        "org.nuxeo.ecm.core.convert.plugins", //
-        "org.nuxeo.runtime.reload", //
+        "org.nuxeo.ecm.core.convert.plugins"
 })
 @LocalDeploy({ "org.nuxeo.ecm.core.test.tests:OSGI-INF/test-repo-core-types-contrib.xml",
         "org.nuxeo.ecm.core.test.tests:OSGI-INF/test-restriction-contrib.xml",
@@ -105,13 +101,7 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 public class TestSQLRepositoryProperties {
 
     @Inject
-    protected RuntimeHarness runtimeHarness;
-
-    @Inject
     protected CoreFeature coreFeature;
-
-    @Inject
-    protected EventService eventService;
 
     @Inject
     protected BlobHolderAdapterService blobHolderAdapterService;
@@ -123,7 +113,7 @@ public class TestSQLRepositoryProperties {
     protected CoreSession session;
 
     @Inject
-    protected ReloadService reloadService;
+    HotDeployer deployer;
 
     DocumentModel doc;
 
@@ -153,13 +143,6 @@ public class TestSQLRepositoryProperties {
 
     protected void reopenSession() {
         session = coreFeature.reopenCoreSession();
-    }
-
-    protected void waitForAsyncCompletion() {
-        if (TransactionHelper.isTransactionActiveOrMarkedRollback()) {
-            nextTransaction();
-        }
-        eventService.waitForAsyncCompletion();
     }
 
     protected void nextTransaction() {
@@ -693,40 +676,29 @@ public class TestSQLRepositoryProperties {
     // NOTE that this test cannot pass if DEBUG_UUIDS=true due to the reset of the uuid counter
     @Test
     public void testComplexPropertySchemaUpdate() throws Exception {
-        assumeTrue(coreFeature.getStorageConfiguration().isVCS());
+    	assumeTrue(coreFeature.getStorageConfiguration().isVCS());
 
-        // create a doc
-        doc.setPropertyValue("tp:complex/string", "test");
-        doc = session.saveDocument(doc);
-        session.save();
+    	// create a doc
+    	doc.setPropertyValue("tp:complex/string", "test");
+    	doc = session.saveDocument(doc);
+    	session.save();
 
-        waitForAsyncCompletion();
-        coreFeature.releaseCoreSession();
+    	deployer.deploy("org.nuxeo.ecm.core.test.tests:OSGI-INF/test-schema-update.xml");
 
-        // add complexschema to TestDocument
-        runtimeHarness.deployContrib("org.nuxeo.ecm.core.test.tests", "OSGI-INF/test-schema-update.xml");
-        try {
-            reloadService.reloadRepository();
-            // reload repo with new doctype
-            session = coreFeature.createCoreSession();
+    	doc = session.getDocument(new IdRef(doc.getId()));
 
-            doc = session.getDocument(new IdRef(doc.getId()));
+    	// this property did not exist on document creation, after updating the
+    	// doctype it should not fail
+    	Property prop = doc.getProperty("cmpf:attachedFile");
+    	Map<String, Object> expected = new HashMap<>();
+    	expected.put("name", null);
+    	expected.put("vignettes", Collections.emptyList());
+    	assertEquals(expected, prop.getValue());
 
-            // this property did not exist on document creation, after updating the
-            // doctype it should not fail
-            Property prop = doc.getProperty("cmpf:attachedFile");
-            Map<String, Object> expected = new HashMap<>();
-            expected.put("name", null);
-            expected.put("vignettes", Collections.emptyList());
-            assertEquals(expected, prop.getValue());
-
-            // check that we can write to it as well
-            prop.setValue(Collections.singletonMap("vignettes",
-                    Collections.singletonList(Collections.singletonMap("width", Long.valueOf(123)))));
-            doc = session.saveDocument(doc);
-        } finally {
-            runtimeHarness.undeployContrib("org.nuxeo.ecm.core.test.tests", "OSGI-INF/test-schema-update.xml");
-        }
+    	// check that we can write to it as well
+    	prop.setValue(Collections.singletonMap("vignettes",
+    			Collections.singletonList(Collections.singletonMap("width", Long.valueOf(123)))));
+    	doc = session.saveDocument(doc);
     }
 
     // NXP-2318: i don't get what's supposed to be answered to these questions

@@ -30,7 +30,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.Lock;
@@ -46,7 +45,6 @@ public class TestSQLBackendUpgrade extends SQLBackendTestCase {
     }
 
     @Override
-    @Before
     public void setUp() throws Exception {
         super.setUp();
         deployContrib("org.nuxeo.ecm.core.storage.sql.test.tests", "OSGI-INF/test-backend-core-types-contrib.xml");

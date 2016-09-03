@@ -26,7 +26,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import org.jmock.Expectations;
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.core.storage.sql.RepositoryDescriptor;
 import org.nuxeo.runtime.api.Framework;
@@ -40,12 +39,16 @@ public class TestDialectSubclassing extends NXRuntimeTestCase {
 
     protected RepositoryDescriptor repositoryDescriptor;
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @Override
+	public void setUp() throws Exception {
         metadata = getDatabaseMetaData();
         connection = getConnection();
         repositoryDescriptor = new RepositoryDescriptor();
+    }
+
+    @Override
+    protected void postSetUp() throws Exception {
+    	repositoryDescriptor = new RepositoryDescriptor();
     }
 
     protected DatabaseMetaData getDatabaseMetaData() throws SQLException {

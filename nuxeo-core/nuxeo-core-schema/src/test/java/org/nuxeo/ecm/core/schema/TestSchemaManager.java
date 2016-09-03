@@ -35,8 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.core.schema.types.ComplexType;
 import org.nuxeo.ecm.core.schema.types.CompositeType;
@@ -50,18 +48,13 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     SchemaManagerImpl schemaManager;
 
     @Override
-    @Before
     public void setUp() throws Exception {
-        super.setUp();
         deployBundle("org.nuxeo.ecm.core.schema");
-        schemaManager = (SchemaManagerImpl) Framework.getLocalService(SchemaManager.class);
     }
 
     @Override
-    @After
-    public void tearDown() throws Exception {
-        schemaManager = null;
-        super.tearDown();
+    protected void postSetUp() throws Exception {
+    	schemaManager = (SchemaManagerImpl) Framework.getLocalService(SchemaManager.class);
     }
 
     @Test
@@ -231,6 +224,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testDynamicChanges() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/CoreTestExtensions.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         DocumentType t = schemaManager.getDocumentType("myDoc3");
         Set<String> ts = new HashSet<String>(Arrays.asList(t.getSchemaNames()));
         assertEquals(new HashSet<String>(Arrays.asList("schema1", "schema2")), ts);
@@ -238,6 +234,8 @@ public class TestSchemaManager extends NXRuntimeTestCase {
 
         // add a new schema the myDoc2 and remove a facet
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/test-change-doctype.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         // myDoc3, a child type, sees the change
         t = schemaManager.getDocumentType("myDoc3");
@@ -249,6 +247,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testSupertypeLoop() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/test-supertype-loop.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         DocumentType t = schemaManager.getDocumentType("someDocInLoop");
         DocumentType t2 = schemaManager.getDocumentType("someDocInLoop2");
         assertEquals("someDocInLoop2", t.getSuperType().getName());
@@ -258,6 +259,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testMissingSupertype() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/test-missing-supertype.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         DocumentType t = schemaManager.getDocumentType("someDoc");
         DocumentType t2 = schemaManager.getDocumentType("someDoc2");
         assertNull(t.getSuperType());
@@ -267,6 +271,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testFacetMissingSchema() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/test-facet-missing-schema.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         CompositeType f = schemaManager.getFacet("someFacet");
         assertEquals(Collections.singletonList("common"), Arrays.asList(f.getSchemaNames()));
     }
@@ -274,6 +281,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testFacetNoPerDocumentQuery() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/test-facet-per-document.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         assertTrue(schemaManager.getNoPerDocumentQueryFacets().contains("someFacet"));
     }
 
@@ -288,6 +298,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testMergeDocumentType() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/CoreTestExtensions.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         DocumentType t = schemaManager.getDocumentType("myDoc");
         assertEquals(Collections.singletonList("schema2"), Arrays.asList(t.getSchemaNames()));
         assertEquals(new HashSet<String>(Arrays.asList("viewable", "writable")), t.getFacets());
@@ -300,6 +313,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
         assertEquals(Arrays.asList("schema3"), schemaNames(schemaManager.getProxySchemas(null)));
 
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/test-merge-doctype.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         t = schemaManager.getDocumentType("myDoc");
         assertEquals(Collections.singletonList("schema2"), Arrays.asList(t.getSchemaNames()));
         assertEquals(new HashSet<String>(Arrays.asList("viewable", "writable", "NewFacet")), t.getFacets());
@@ -315,6 +331,8 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testDeployWithIncludeAndImport() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/testSchemaWithImportInclude.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         Schema schema = schemaManager.getSchema("schemaWithIncludeAndImport");
         assertNotNull(schema);
@@ -332,6 +350,8 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testDeploySchemaWithRebase() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/testSchemaRebase.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         Schema schema = schemaManager.getSchema("employeeSchema");
         assertNotNull(schema);
@@ -355,6 +375,8 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testHasSuperType() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/CoreTestExtensions.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         assertTrue(schemaManager.hasSuperType("Document", "Document"));
         assertTrue(schemaManager.hasSuperType("myDoc", "Document"));

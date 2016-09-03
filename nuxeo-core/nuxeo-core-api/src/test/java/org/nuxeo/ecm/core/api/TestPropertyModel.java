@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.ReadOnlyPropertyException;
@@ -183,11 +182,14 @@ public class TestPropertyModel extends NXRuntimeTestCase {
         }
     }
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @Override
+	protected void setUp() throws Exception {
         deployBundle("org.nuxeo.ecm.core.schema");
         deployContrib("org.nuxeo.ecm.core.api.tests", "OSGI-INF/test-propmodel-types-contrib.xml");
+    }
+
+    @Override
+	protected void postSetUp() throws Exception {
         SchemaManager mgr = Framework.getService(SchemaManager.class);
         // XSDLoader loader = new XSDLoader((SchemaManagerImpl) mgr);
         // schema = loader.loadSchema("test", "book",

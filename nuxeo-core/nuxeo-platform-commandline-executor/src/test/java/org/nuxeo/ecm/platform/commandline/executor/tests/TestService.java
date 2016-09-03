@@ -28,7 +28,6 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandLineExecutorService;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandNotAvailable;
@@ -43,9 +42,7 @@ import org.nuxeo.runtime.test.NXRuntimeTestCase;
 public class TestService extends NXRuntimeTestCase {
 
     @Override
-    @Before
     public void setUp() throws Exception {
-        super.setUp();
         deployBundle("org.nuxeo.ecm.platform.commandline.executor");
     }
 
@@ -61,12 +58,16 @@ public class TestService extends NXRuntimeTestCase {
         assertNotNull(cles);
 
         deployContrib("org.nuxeo.ecm.platform.commandline.executor", "OSGI-INF/commandline-aspell-test-contribs.xml");
+        applyInlineDeployments();
+
         List<String> cmds = cles.getRegistredCommands();
         assertNotNull(cmds);
         assertEquals(1, cmds.size());
         assertTrue(cmds.contains("aspell"));
 
         deployContrib("org.nuxeo.ecm.platform.commandline.executor", "OSGI-INF/commandline-imagemagic-test-contrib.xml");
+        applyInlineDeployments();
+
         cmds = cles.getRegistredCommands();
         assertNotNull(cmds);
         assertEquals(2, cmds.size());
@@ -74,6 +75,8 @@ public class TestService extends NXRuntimeTestCase {
 
         deployContrib("org.nuxeo.ecm.platform.commandline.executor",
                 "OSGI-INF/commandline-imagemagic-test-contrib2.xml");
+        applyInlineDeployments();
+
         cmds = cles.getRegistredCommands();
         assertNotNull(cmds);
         assertEquals(1, cmds.size());

@@ -20,6 +20,8 @@
 
 package org.nuxeo.ecm.core.security;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.nuxeo.ecm.core.CoreUTConstants.CORE_BUNDLE;
 import static org.nuxeo.ecm.core.CoreUTConstants.CORE_TESTS_BUNDLE;
 import static org.nuxeo.ecm.core.api.security.Access.DENY;
@@ -32,14 +34,10 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 
-import org.junit.Before;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JUnit4Mockery;
-import org.junit.After;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.nuxeo.ecm.core.api.Lock;
 import org.nuxeo.ecm.core.api.impl.UserPrincipal;
 import org.nuxeo.ecm.core.model.Document;
@@ -60,20 +58,21 @@ public class TestSecurityPolicyService extends NXRuntimeTestCase {
 
     protected Mockery mockery = new JUnit4Mockery();
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @Override
+	public void setUp() throws Exception {
         deployContrib(CORE_BUNDLE, "OSGI-INF/SecurityService.xml");
         deployContrib(CORE_BUNDLE, "OSGI-INF/permissions-contrib.xml");
         deployContrib(CORE_BUNDLE, "OSGI-INF/security-policy-contrib.xml");
-        service = Framework.getService(SecurityPolicyService.class);
-        assertNotNull(service);
-
     }
 
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
+    @Override
+    protected void postSetUp() throws Exception {
+        service = Framework.getService(SecurityPolicyService.class);
+        assertNotNull(service);
+    }
+
+    @Override
+	public void tearDown() throws Exception {
         service = null;
     }
 
@@ -111,6 +110,8 @@ public class TestSecurityPolicyService extends NXRuntimeTestCase {
 
         // test creator policy with lower order takes over lock
         deployContrib(CORE_TESTS_BUNDLE, "test-security-policy-contrib.xml");
+        applyInlineDeployments();
+        postSetUp();
         assertSame(GRANT, service.checkPermission(doc2, null, creatorPrincipal, permission, permissions, null));
         assertSame(UNKNOWN, service.checkPermission(doc2, null, userPrincipal, permission, permissions, null));
     }
@@ -157,6 +158,8 @@ public class TestSecurityPolicyService extends NXRuntimeTestCase {
         assertSame(UNKNOWN, service.checkPermission(doc2, null, creatorPrincipal, permission, permissions, null));
 
         deployContrib(CORE_TESTS_BUNDLE, "test-security-policy2-contrib.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         assertSame(DENY, service.checkPermission(doc2, null, creatorPrincipal, permission, permissions, null));
     }

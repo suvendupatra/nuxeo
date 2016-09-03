@@ -20,6 +20,7 @@ package org.nuxeo.ecm.core.api.pathsegment;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.InvocationHandler;
@@ -27,7 +28,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.api.Framework;
@@ -58,9 +58,8 @@ public class PathSegmentServiceTest extends NXRuntimeTestCase {
         }
     }
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @Override
+	protected void setUp() throws Exception {
         deployBundle("org.nuxeo.ecm.core.schema");
         deployBundle("org.nuxeo.ecm.core.api");
     }
@@ -76,6 +75,8 @@ public class PathSegmentServiceTest extends NXRuntimeTestCase {
     @Test
     public void testContrib() throws Exception {
         deployContrib("org.nuxeo.ecm.core.api.tests", "OSGI-INF/test-pathsegment-contrib.xml");
+        applyInlineDeployments();
+
         PathSegmentService service = Framework.getService(PathSegmentService.class);
         assertNotNull(service);
         DocumentModel doc = DocumentModelProxy.newDocumentModel("My Document");
@@ -84,11 +85,17 @@ public class PathSegmentServiceTest extends NXRuntimeTestCase {
 
     @Test
     public void testContribOverride() throws Exception {
-        PathSegmentService service = Framework.getService(PathSegmentService.class);
         deployContrib("org.nuxeo.ecm.core.api.tests", "OSGI-INF/test-pathsegment-contrib.xml");
+        applyInlineDeployments();
+
+        PathSegmentService service = Framework.getService(PathSegmentService.class);
         DocumentModel doc = DocumentModelProxy.newDocumentModel("My Document");
         assertEquals("my-document", service.generatePathSegment(doc));
+
         deployContrib("org.nuxeo.ecm.core.api.tests", "OSGI-INF/test-pathsegment-contrib2.xml");
+        applyInlineDeployments();
+
+        service = Framework.getService(PathSegmentService.class);
         assertEquals("My Document", service.generatePathSegment(doc));
     }
 

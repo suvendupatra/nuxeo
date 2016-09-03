@@ -34,6 +34,7 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
+import org.nuxeo.ecm.core.convert.cache.ConversionCacheHolder;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -61,6 +62,9 @@ public class TestAsyncConversion {
 
     @Test
     public void shouldDoAsyncConversionGivenDestinationMimeType() throws IOException {
+    	// TODO: might be a bug? ensure no cache is used - when file is cached the filename is not preserved!
+    	ConversionCacheHolder.deleteCache();
+
         File file = FileUtils.getResourceFileFromContext("test-data/hello.doc");
         Blob blob = Blobs.createBlob(file, "application/msword", null, "hello.doc");
         BlobHolder bh = new SimpleBlobHolder(blob);
@@ -81,6 +85,9 @@ public class TestAsyncConversion {
 
     @Test
     public void shouldDoAsyncConversionGivenConverterName() throws IOException {
+    	// TODO: might be a bug? ensure no cache is used - when file is cached the filename is not preserved!
+    	ConversionCacheHolder.deleteCache();
+
         File file = FileUtils.getResourceFileFromContext("test-data/hello.doc");
         Blob blob = Blobs.createBlob(file, "application/msword", null, "hello.doc");
         BlobHolder bh = new SimpleBlobHolder(blob);

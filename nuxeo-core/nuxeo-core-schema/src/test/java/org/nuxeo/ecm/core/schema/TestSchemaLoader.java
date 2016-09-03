@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.nuxeo.ecm.core.schema.types.ComplexType;
@@ -57,10 +56,12 @@ public class TestSchemaLoader extends NXRuntimeTestCase {
     private XSDLoader reader;
 
     @Override
-    @Before
     public void setUp() throws Exception {
-        super.setUp();
         deployBundle("org.nuxeo.ecm.core.schema");
+    }
+
+    @Override
+    protected void postSetUp() throws Exception {
         typeMgr = Framework.getLocalService(SchemaManager.class);
         reader = new XSDLoader((SchemaManagerImpl) typeMgr);
     }
@@ -110,6 +111,9 @@ public class TestSchemaLoader extends NXRuntimeTestCase {
     @Test
     public void testContribs() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/CoreTestExtensions.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         DocumentType docType = typeMgr.getDocumentType("myDoc");
 
         assertNotNull(docType);

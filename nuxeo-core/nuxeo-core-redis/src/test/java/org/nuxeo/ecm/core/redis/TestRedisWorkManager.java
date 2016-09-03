@@ -40,9 +40,9 @@ public class TestRedisWorkManager extends WorkManagerTest {
     }
 
     @Override
-    protected void doDeploy() throws Exception {
-        super.doDeploy();
-        RedisFeature.setup(this);
+    public void setUp() throws Exception {
+        super.setUp();
+        RedisFeature.setup(harness);
         if (monitorRedis) {
             redisExecutor = Framework.getLocalService(RedisExecutor.class);
             redisExecutor.startMonitor();

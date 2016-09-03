@@ -66,7 +66,6 @@ import org.apache.commons.logging.LogFactory;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.integration.junit4.JUnit4Mockery;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.Blob;
@@ -110,7 +109,6 @@ public class TestSQLBackend extends SQLBackendTestCase {
     protected boolean pathOptimizationsEnabled;
 
     @Override
-    @Before
     public void setUp() throws Exception {
         pathOptimizationsEnabled = true; // changed in a few tests
         super.setUp();
@@ -149,6 +147,8 @@ public class TestSQLBackend extends SQLBackendTestCase {
     @Test
     public void testSchemaWithLongName() throws Exception {
         deployContrib("org.nuxeo.ecm.core.storage.sql.test.tests", "OSGI-INF/test-schema-longname.xml");
+        applyInlineDeployments();
+        postSetUp();
         Session session = repository.getConnection();
         session.getRootNode();
     }
@@ -156,6 +156,8 @@ public class TestSQLBackend extends SQLBackendTestCase {
     @Test
     public void testSchemaWithReservedFieldName() throws Exception {
         deployContrib("org.nuxeo.ecm.core.storage.sql.test.tests", "OSGI-INF/test-schema-reservedfieldname.xml");
+        applyInlineDeployments();
+        postSetUp();
         Session session = repository.getConnection();
         session.getRootNode();
     }
@@ -581,6 +583,8 @@ public class TestSQLBackend extends SQLBackendTestCase {
     @Test
     public void testSmallText() throws Exception {
         deployContrib("org.nuxeo.ecm.core.storage.sql.test.tests", "OSGI-INF/test-restriction-contrib.xml");
+        applyInlineDeployments();
+        postSetUp();
         Session session = repository.getConnection();
         Node root = session.getRootNode();
         Node nodea = session.addChildNode(root, "foo", null, "Restriction", false);
@@ -599,6 +603,8 @@ public class TestSQLBackend extends SQLBackendTestCase {
     @Test
     public void testBigText() throws Exception {
         deployContrib("org.nuxeo.ecm.core.storage.sql.test.tests", "OSGI-INF/test-restriction-big-contrib.xml");
+        applyInlineDeployments();
+        postSetUp();
         Session session = repository.getConnection();
         Node root = session.getRootNode();
         Node nodea = session.addChildNode(root, "foo", null, "RestrictionBig", false);
@@ -2407,6 +2413,8 @@ public class TestSQLBackend extends SQLBackendTestCase {
         if (shadow) {
             // deploy another contrib where TestDoc4 also has the proxy schema
             deployContrib("org.nuxeo.ecm.core.storage.sql.test.tests", "OSGI-INF/test-backend-core-types-contrib-2.xml");
+            applyInlineDeployments();
+            postSetUp();
             type = "TestDoc4";
         } else {
             type = "TestDoc2";

@@ -31,9 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.SystemUtils;
-import org.junit.Before;
 import org.junit.Test;
-
 import org.nuxeo.common.Environment;
 import org.nuxeo.ecm.platform.commandline.executor.api.CmdParameters;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandLineExecutorService;
@@ -51,9 +49,7 @@ import org.nuxeo.runtime.test.NXRuntimeTestCase;
 public class TestCommands extends NXRuntimeTestCase {
 
     @Override
-    @Before
     public void setUp() throws Exception {
-        super.setUp();
         deployBundle("org.nuxeo.ecm.platform.commandline.executor");
     }
 
@@ -96,6 +92,8 @@ public class TestCommands extends NXRuntimeTestCase {
         assertNotNull(cles);
 
         deployContrib("org.nuxeo.ecm.platform.commandline.executor", "OSGI-INF/commandline-env-test-contrib.xml");
+        applyInlineDeployments();
+
         List<String> cmds = cles.getRegistredCommands();
         assertNotNull(cmds);
         assertTrue(cmds.contains("echo"));
@@ -114,6 +112,7 @@ public class TestCommands extends NXRuntimeTestCase {
         CommandLineExecutorService cles = Framework.getLocalService(CommandLineExecutorService.class);
 
         deployContrib("org.nuxeo.ecm.platform.commandline.executor", "OSGI-INF/commandline-env-test-contrib.xml");
+        applyInlineDeployments();
 
         ExecResult result = cles.execCommand("pipe", cles.getDefaultCmdParameters());
         assertTrue(result.isSuccessful());
