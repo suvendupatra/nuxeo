@@ -21,11 +21,16 @@
 
 package org.nuxeo.ecm.platform.layout.core.tests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.platform.forms.layout.api.BuiltinModes;
 import org.nuxeo.ecm.platform.forms.layout.api.FieldDefinition;
@@ -37,12 +42,6 @@ import org.nuxeo.ecm.platform.forms.layout.api.service.LayoutStore;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.NXRuntimeTestCase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 /**
  * Test layout service API
  *
@@ -52,11 +51,14 @@ public class TestLayoutStoreService extends NXRuntimeTestCase {
 
     private LayoutStore service;
 
-    @Before
+    @Override
     public void setUp() throws Exception {
-        super.setUp();
         deployBundle("org.nuxeo.ecm.platform.forms.layout.core");
         deployContrib("org.nuxeo.ecm.platform.forms.layout.core.tests", "layouts-core-test-contrib.xml");
+    }
+
+    @Override
+    protected void postSetUp() throws Exception {
         service = Framework.getService(LayoutStore.class);
         assertNotNull(service);
     }
@@ -69,12 +71,19 @@ public class TestLayoutStoreService extends NXRuntimeTestCase {
         LayoutDefinition l = service.getLayoutDefinition("testCategory", "testLayout");
         assertNotNull(l);
         assertEquals(4, l.getRows().length);
+
         deployContrib("org.nuxeo.ecm.platform.forms.layout.core.tests", "layouts-core-test-override-contrib.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         // check override
         l = service.getLayoutDefinition("testCategory", "testLayout");
         assertNotNull(l);
         assertEquals(0, l.getRows().length);
-        undeployContrib("org.nuxeo.ecm.platform.forms.layout.core.tests", "layouts-core-test-override-contrib.xml");
+
+        removeInlineDeployments();
+        postSetUp();
+
         // check back to original def
         l = service.getLayoutDefinition("testCategory", "testLayout");
         assertNotNull(l);
