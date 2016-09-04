@@ -258,8 +258,7 @@ public class PageProviderServiceImpl extends DefaultComponent implements PagePro
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        super.applicationStarted(context);
+    public void start(ComponentContext context) {
         replacersReg.dumpReplacerMap();
     }
 

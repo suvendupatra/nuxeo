@@ -26,7 +26,6 @@ import static org.junit.Assert.assertTrue;
 
 import javax.faces.context.FacesContext;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.platform.actions.jsf.JSFActionContext;
@@ -44,15 +43,17 @@ public class TestActionFilter extends NXRuntimeTestCase {
 
     protected MockFacesContext facesContext;
 
-    @Before
+    @Override
     public void setUp() throws Exception {
-        super.setUp();
         deployBundle("org.nuxeo.ecm.core.schema");
         deployContrib("org.nuxeo.ecm.actions", "OSGI-INF/actions-framework.xml");
         deployContrib("org.nuxeo.ecm.actions.jsf.tests", "test-filters-contrib.xml");
         deployContrib("org.nuxeo.ecm.actions.jsf.tests", "test-filters-override-contrib.xml");
-        as = (ActionService) runtime.getComponent(ActionService.ID);
+    }
 
+    @Override
+    protected void postSetUp() throws Exception {
+        as = (ActionService) runtime.getComponent(ActionService.ID);
         facesContext = new MockFacesContext();
         facesContext.setCurrent();
         assertNotNull(FacesContext.getCurrentInstance());
@@ -245,6 +246,8 @@ public class TestActionFilter extends NXRuntimeTestCase {
     @Test
     public void testGetAction() throws Exception {
         deployContrib("org.nuxeo.ecm.actions.jsf.tests", "test-actions-contrib.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         DocumentModel doc = new MockDocumentModel("Workspace", new String[0]);
         Action action = as.getAction("singleActionRetrievedWithFilter", getActionContext(doc), true);

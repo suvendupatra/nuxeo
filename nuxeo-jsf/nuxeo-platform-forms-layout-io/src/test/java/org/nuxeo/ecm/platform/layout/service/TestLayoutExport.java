@@ -36,7 +36,6 @@ import java.util.Map;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.platform.forms.layout.api.BuiltinModes;
@@ -69,12 +68,15 @@ public class TestLayoutExport extends NXRuntimeTestCase {
 
     private LayoutStore service;
 
-    @Before
+    @Override
     public void setUp() throws Exception {
-        super.setUp();
         deployBundle("org.nuxeo.ecm.platform.forms.layout.core");
         deployContrib("org.nuxeo.ecm.platform.forms.layout.client", "OSGI-INF/layouts-framework.xml");
         deployContrib("org.nuxeo.ecm.platform.forms.layout.export.tests", "layouts-test-contrib.xml");
+    }
+
+    @Override
+    protected void postSetUp() throws Exception {
         service = Framework.getService(LayoutStore.class);
         assertNotNull(service);
     }
