@@ -61,8 +61,10 @@ public class HotDeployer {
 						String bundleId = contrib.substring(0, i);
 						if (bundleId.startsWith("@")) {
 							bundleId = bundleId.substring(1);
+							harness.deployTestContrib(bundleId, contrib.substring(i+1));
+						} else {
+						    harness.deployContrib(bundleId, contrib.substring(i+1));
 						}
-						harness.deployContrib(bundleId, contrib.substring(i+1));
 					} else {
 						harness.deployBundle(contrib);
 					}
@@ -83,12 +85,26 @@ public class HotDeployer {
 		this.head = new DefaultDeployAction();
 	}
 
+	/**
+	 * Add a custom deploy action that wraps the default action.
+	 * You should call next.deploy(..) in your action code to call the next action
+	 * @param action
+	 * @return
+	 */
 	public HotDeployer onDeploy(DeployAction action) {
 		action.next = this.head;
 		this.head = action;
 		return this;
 	}
 
+	/**
+	 * Deploy the given list of contributions. The format is [@]bundleId[:componentPath].
+	 * If no component path is specified then the bundle identified by the bundleId part will be deployed.
+	 * If a componentPath is given {@link RuntimeHarness#deployContrib(String,String)} will be used to deploy the contribution.
+	 * If bundleId:componentPath expression is prefixed by a '@' character then {@link RuntimeHarness#deployTestContrib(String,String)} will be used to deploy the contribution	 *
+	 * @param contribs
+	 * @throws Exception
+	 */
 	public void deploy(String ... contribs) throws Exception {
 		this.head.deploy(contribs);
 		reinject();
