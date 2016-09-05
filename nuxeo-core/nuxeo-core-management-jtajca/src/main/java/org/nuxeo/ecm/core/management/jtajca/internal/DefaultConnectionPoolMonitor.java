@@ -40,6 +40,7 @@ import org.nuxeo.ecm.core.storage.sql.Mapper.Identification;
 import org.nuxeo.ecm.core.storage.sql.SessionImpl;
 import org.nuxeo.ecm.core.storage.sql.SoftRefCachingMapper;
 import org.nuxeo.ecm.core.storage.sql.ra.ManagedConnectionImpl;
+import org.nuxeo.runtime.jtajca.NuxeoContainer;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.tranql.connector.AbstractManagedConnection;
 
@@ -302,6 +303,16 @@ public class DefaultConnectionPoolMonitor implements ConnectionPoolMonitor {
      */
     public void handleNewConnectionManager(AbstractConnectionManager cm) {
         this.cm = enhanceConnectionManager(cm);
+    }
+
+    @Override
+    public void reset() {
+        NuxeoContainer.resetConnectionManager(name);
+    }
+
+    @Override
+    public void cleanup() {
+        NuxeoContainer.cleanupConnectionManager(name, System.currentTimeMillis());
     }
 
 }

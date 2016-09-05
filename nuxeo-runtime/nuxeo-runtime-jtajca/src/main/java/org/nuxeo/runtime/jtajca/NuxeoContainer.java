@@ -20,10 +20,14 @@
 package org.nuxeo.runtime.jtajca;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.CompositeName;
@@ -55,6 +59,7 @@ import org.apache.geronimo.connector.outbound.AbstractConnectionManager;
 import org.apache.geronimo.connector.outbound.ConnectionInfo;
 import org.apache.geronimo.connector.outbound.ConnectionReturnAction;
 import org.apache.geronimo.connector.outbound.ConnectionTrackingInterceptor;
+import org.apache.geronimo.connector.outbound.PoolIdleReleaserTimer;
 import org.apache.geronimo.connector.outbound.PoolingAttributes;
 import org.apache.geronimo.connector.outbound.connectionmanagerconfig.LocalTransactions;
 import org.apache.geronimo.connector.outbound.connectionmanagerconfig.PoolingSupport;
@@ -406,19 +411,15 @@ public class NuxeoContainer {
     }
 
     public static synchronized void disposeConnectionManager(ConnectionManager mgr) {
-        ConnectionManagerWrapper wrapper = (ConnectionManagerWrapper) mgr;
-        for (NuxeoContainerListener listener : listeners) {
-            listener.handleConnectionManagerDispose(wrapper.config.getName(), wrapper.cm);
-        }
         ((ConnectionManagerWrapper) mgr).dispose();
     }
 
     public static synchronized void resetConnectionManager(String name) {
-        ConnectionManagerWrapper wrapper = connectionManagers.get(name);
-        wrapper.reset();
-        for (NuxeoContainerListener listener : listeners) {
-            listener.handleConnectionManagerReset(name, wrapper.cm);
-        }
+        connectionManagers.get(name).reset();
+    }
+
+    public static synchronized void cleanupConnectionManager(String name, long deadline) {
+        connectionManagers.get(name).cleanup(deadline);
     }
 
     // called by reflection from RepositoryReloader
@@ -743,66 +744,117 @@ public class NuxeoContainer {
 
     public static class ConnectionTrackingCoordinator implements ConnectionTracker {
 
-        protected static class Context {
+        protected final List<TimeToLive> ttls = new LinkedList<>();
 
-            protected boolean unshareable;
+        final CleanupTask cleanup = new CleanupTask();
 
-            protected final String threadName = Thread.currentThread().getName();
-
-            protected final Map<ConnectionInfo, Allocation> inuse = new HashMap<>();
-
-            public static class AllocationErrors extends RuntimeException {
-
-                private static final long serialVersionUID = 1L;
-
-                protected AllocationErrors(Context context) {
-                    super("leaked " + context.inuse + " connections in " + context.threadName);
-                    for (Allocation each : context.inuse.values()) {
-                        addSuppressed(each);
-                        try {
-                            each.info.getManagedConnectionInfo().getManagedConnection().destroy();
-                        } catch (ResourceException cause) {
-                            addSuppressed(cause);
-                        }
-                    }
-                }
-
-            }
-
-            protected static class Allocation extends Throwable {
-
-                private static final long serialVersionUID = 1L;
-
-                public final ConnectionInfo info;
-
-                Allocation(ConnectionInfo info) {
-                    super("Allocation stack trace of " + info.toString());
-                    this.info = info;
-                }
-
-            };
+        class CleanupTask extends TimerTask {
 
             @Override
-            protected void finalize() throws Throwable {
-                try {
-                    checkIsEmpty();
-                } catch (AllocationErrors cause) {
-                    LogFactory.getLog(ConnectionTrackingCoordinator.class).error("cleanup errors", cause);
-                }
-            }
-
-            protected void checkIsEmpty() {
-                if (!inuse.isEmpty()) {
-                    throw new AllocationErrors(this);
-                }
+            public void run() {
+                cleanup(System.currentTimeMillis());
             }
 
         }
 
-        protected final ThreadLocal<Context> contextHolder = new ThreadLocal<Context>() {
+        void cancelCleanups() {
+            cleanup.cancel();
+        }
+
+        void scheduleCleanups(int ttl) {
+            PoolIdleReleaserTimer.getTimer().schedule(cleanup, ttl, ttl);
+        }
+
+        protected final Set<TimeToLive> actives = new HashSet<>();
+
+        synchronized void add(ConnectionInfo info) {
+            actives.add(new TimeToLive(info));
+        }
+
+        synchronized void remove(ConnectionInfo info) {
+            actives.remove(info);
+        }
+
+        synchronized void cleanup(long now) {
+            Iterator<TimeToLive> iterator = actives.iterator();
+            while (iterator.hasNext()) {
+                TimeToLive ttl = iterator.next();
+                if (ttl.deadline >= now) {
+                    try {
+                        ttl.info.getManagedConnectionInfo().getPoolInterceptor().returnConnection(ttl.info,
+                                ConnectionReturnAction.DESTROY);
+                    } finally {
+                        iterator.remove();
+                        LogFactory.getLog(TimeToLive.class)
+                                .error("Evicted " + ttl.info + ",  was obtained by " + ttl.threadName + " at "
+                                        + new Date(ttl.obtained) + " and timed out at " + new Date(ttl.deadline),
+                                        ttl.info.getTrace());
+                    }
+                }
+            }
+        }
+
+        class TimeToLive {
+
+            public final ConnectionInfo info;
+
+            public final String threadName;
+
+            public final long obtained;
+
+            public final long deadline;
+
+            TimeToLive(ConnectionInfo info) {
+                this(info, Thread.currentThread(), 10 * 60 * 1000);
+            }
+
+            TimeToLive(ConnectionInfo info, Thread thread, int ttl) {
+                this.info = info;
+                threadName = thread.getName();
+                obtained = System.currentTimeMillis();
+                deadline = obtained + ttl;
+            }
+
+            boolean checkTimedOut(long now) {
+                if (deadline < now) {
+                    return false;
+                }
+
+                return true;
+            }
+
             @Override
-            protected Context initialValue() {
-                return new Context();
+            public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + getOuterType().hashCode();
+                result = prime * result + info.hashCode();
+                return result;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (!(obj instanceof TimeToLive)) {
+                    return false;
+                }
+                TimeToLive other = (TimeToLive) obj;
+                if (!getOuterType().equals(other.getOuterType())) {
+                    return false;
+                }
+                if (!info.equals(other.info)) {
+                    return false;
+                }
+                return true;
+            }
+
+            private ConnectionTrackingCoordinator getOuterType() {
+                return ConnectionTrackingCoordinator.this;
             }
 
         };
@@ -810,23 +862,28 @@ public class NuxeoContainer {
         @Override
         public void handleObtained(ConnectionTrackingInterceptor connectionTrackingInterceptor,
                 ConnectionInfo connectionInfo, boolean reassociate) throws ResourceException {
-            final Context context = contextHolder.get();
-            context.inuse.put(connectionInfo, new Context.Allocation(connectionInfo));
+            actives.add(new TimeToLive(connectionInfo));
         }
 
         @Override
         public void handleReleased(ConnectionTrackingInterceptor connectionTrackingInterceptor,
                 ConnectionInfo connectionInfo, ConnectionReturnAction connectionReturnAction) {
-            final Context context = contextHolder.get();
-            context.inuse.remove(connectionInfo);
-            if (context.inuse.isEmpty()) {
-                contextHolder.remove();
-            }
+            actives.remove(connectionInfo);
         }
 
         @Override
         public void setEnvironment(ConnectionInfo connectionInfo, String key) {
-            connectionInfo.setUnshareable(contextHolder.get().unshareable);
+            connectionInfo.setUnshareable(noSharingHolder.get() == null ? false : true);
+        }
+
+        final ThreadLocal<Boolean> noSharingHolder = new ThreadLocal<Boolean>();
+
+        void enterNoSharing() {
+            noSharingHolder.set(Boolean.TRUE);
+        }
+
+        void exitNoSharing() {
+            noSharingHolder.remove();
         }
 
     }
@@ -840,7 +897,7 @@ public class NuxeoContainer {
 
         protected ConnectionTrackingCoordinator coordinator;
 
-        protected AbstractConnectionManager cm;
+        protected volatile AbstractConnectionManager cm;
 
         protected final NuxeoConnectionManagerConfiguration config;
 
@@ -849,6 +906,7 @@ public class NuxeoContainer {
             this.coordinator = coordinator;
             this.cm = cm;
             this.config = config;
+            this.coordinator.scheduleCleanups(config.getActiveTimeoutMinutes()*60*1000);
         }
 
         @Override
@@ -858,15 +916,27 @@ public class NuxeoContainer {
         }
 
         public void reset() {
+            AbstractConnectionManager last = cm;
+            cm = createConnectionManager(coordinator, config);
             try {
-                cm.doStop();
+                last.doStop();
             } catch (Exception e) { // stupid Geronimo API throws Exception
                 throw ExceptionUtils.runtimeException(e);
             }
-            cm = createConnectionManager(coordinator, config);
+            for (NuxeoContainerListener listener : listeners) {
+                listener.handleConnectionManagerReset(config.getName(), cm);
+            }
+        }
+
+        public void cleanup(long deadline) {
+            coordinator.cleanup(deadline);
         }
 
         public void dispose() {
+            for (NuxeoContainerListener listener : listeners) {
+                listener.handleConnectionManagerDispose(config.getName(), cm);
+            }
+            coordinator.cancelCleanups();
             NuxeoContainer.connectionManagers.remove(config.getName());
             try {
                 cm.doStop();
@@ -879,20 +949,16 @@ public class NuxeoContainer {
             return config;
         }
 
-        public Collection<ConnectionTrackingCoordinator.Context.Allocation> getCurrentThreadAllocations() {
-            return coordinator.contextHolder.get().inuse.values();
-        }
-
         public PoolingAttributes getPooling() {
             return cm.getPooling();
         }
 
-        public void enterNoSharing() {
-            coordinator.contextHolder.get().unshareable = true;
+        void enterNoSharing() {
+            coordinator.enterNoSharing();
         }
 
-        public void exitNoSharing() {
-            coordinator.contextHolder.get().unshareable = false;
+        void exitNoSharing() {
+            coordinator.exitNoSharing();
         }
 
     }

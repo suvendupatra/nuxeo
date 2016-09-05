@@ -30,4 +30,20 @@ public interface ConnectionPoolMonitor extends PoolingAttributes, Monitor {
 
     public static String NAME = Defaults.instance.name(ConnectionPoolMonitor.class, "%s");
 
+    /**
+     * Destroys the current connection manager and replace it by a new one
+     *
+     *
+     * @since 8.4
+     */
+    void reset();
+
+    /**
+     * Cleanups timed out connections in the pool.
+     *
+     *
+     * @since 8.4
+     */
+    void cleanup();
+
 }

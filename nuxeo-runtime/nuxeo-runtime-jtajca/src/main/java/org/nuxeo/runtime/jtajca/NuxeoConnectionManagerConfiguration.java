@@ -41,6 +41,8 @@ public class NuxeoConnectionManagerConfiguration {
 
     public static final int DEFAULT_IDLE_TIMEOUT_MINUTES = 0; // no timeout
 
+    public static final int DEFAULT_ACTIVE_TIMEOUT_MINUTES = 0; // no timeout
+
     @XNode("@name")
     private String name = "NuxeoConnectionManager";
 
@@ -76,6 +78,9 @@ public class NuxeoConnectionManagerConfiguration {
 
     @XNode("@idleTimeoutMinutes")
     private Integer idleTimeoutMinutes;
+
+    @XNode("@activeTimeoutMinutes")
+    private Integer activeTimeoutMinutes;
 
     Validation testOnBorrow;
 
@@ -200,6 +205,10 @@ public class NuxeoConnectionManagerConfiguration {
         return defaultInt(idleTimeoutMinutes, DEFAULT_IDLE_TIMEOUT_MINUTES);
     }
 
+    public int getActiveTimeoutMinutes() {
+        return defaultInt(activeTimeoutMinutes, DEFAULT_ACTIVE_TIMEOUT_MINUTES);
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -244,6 +253,10 @@ public class NuxeoConnectionManagerConfiguration {
         this.idleTimeoutMinutes = Integer.valueOf(idleTimeoutMinutes);
     }
 
+    public void setActiveTimeoutMinutes(int idleTimeoutMinutes) {
+        this.activeTimeoutMinutes = Integer.valueOf(idleTimeoutMinutes);
+    }
+
     @XNode("@validationQuery")
     public void setValidationQuery(String sql) {
         if (sql.isEmpty()) {
@@ -285,4 +298,6 @@ public class NuxeoConnectionManagerConfiguration {
                 "maxWait deprecated dbcp pool attribute usage, should use blockingTimeoutMillis geronimo pool attribute instead");
 
     }
+
+
 }
