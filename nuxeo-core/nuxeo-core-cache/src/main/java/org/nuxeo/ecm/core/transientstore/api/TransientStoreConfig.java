@@ -114,4 +114,10 @@ public class TransientStoreConfig {
         return store;
     }
 
+    /**
+     * Flush the cached store if any
+     */
+    public void flush() {
+        store =  null;
+    }
 }
