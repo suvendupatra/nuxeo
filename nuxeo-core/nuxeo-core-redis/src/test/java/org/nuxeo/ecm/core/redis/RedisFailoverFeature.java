@@ -29,16 +29,19 @@ import org.nuxeo.runtime.test.runner.SimpleFeature;
 @Config(mode = Mode.embedded, guessError = RedisEmbeddedGuessConnectionError.OnRandomCall.class)
 public class RedisFailoverFeature extends SimpleFeature {
 
-    RedisEmbeddedPool pool;
-
-    @Override
-    public void start(FeaturesRunner runner) throws Exception {
-        pool = (RedisEmbeddedPool) Framework.getLocalService(RedisExecutor.class).getPool();
+    /**
+     * Get the pool instance.
+     * Since components can be restarted in tests you should always lookup a fresh instance using that method and avoid caching the service reference in a class field.
+     * @return
+     */
+    protected RedisEmbeddedPool getPool() {
+        return (RedisEmbeddedPool) Framework.getLocalService(RedisExecutor.class).getPool();
     }
 
     @Override
     public void beforeMethodRun(FeaturesRunner runner, FrameworkMethod method, Object test) throws Exception {
         Config config = runner.getConfig(method, Config.class);
+        RedisEmbeddedPool pool = getPool();
         if (pool instanceof RedisEmbeddedPool) {
             pool.setError(config.guessError().newInstance());
         }
@@ -46,6 +49,6 @@ public class RedisFailoverFeature extends SimpleFeature {
 
     @Override
     public void afterTeardown(FeaturesRunner runner) throws Exception {
-        pool.setError(new RedisEmbeddedGuessConnectionError.NoError());
+        getPool().setError(new RedisEmbeddedGuessConnectionError.NoError());
     }
 }

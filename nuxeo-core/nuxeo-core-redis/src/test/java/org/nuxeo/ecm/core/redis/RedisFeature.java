@@ -32,7 +32,10 @@ import org.nuxeo.ecm.core.redis.embedded.RedisEmbeddedSynchronizedExecutor;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
+import org.nuxeo.runtime.ComponentEvent;
+import org.nuxeo.runtime.ComponentListener;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.test.runner.Defaults;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -164,8 +167,15 @@ public class RedisFeature extends SimpleFeature {
         harness.deployBundle("org.nuxeo.ecm.core.redis");
         harness.deployTestContrib("org.nuxeo.ecm.core.redis", RedisFeature.class.getResource("/redis-contribs.xml"));
 
-        RedisComponent component = (RedisComponent) Framework.getRuntime().getComponent(
-                RedisComponent.class.getPackage().getName());
+        registerComponentListener();// this will dynamically configure redis component when activated
+        return true;
+    }
+
+    protected boolean installConfig(RedisComponent component) {
+        Mode mode = getMode();
+        if (Mode.disabled.equals(mode)) {
+            return false;
+        }
         if (Mode.embedded.equals(mode)) {
             RedisExecutor executor = new RedisPoolExecutor(new RedisEmbeddedPool());
             executor = new RedisEmbeddedSynchronizedExecutor(executor);
@@ -175,8 +185,6 @@ public class RedisFeature extends SimpleFeature {
             component.registerRedisPoolDescriptor(getDescriptor(mode));
             component.handleNewExecutor(component.getConfig().newExecutor());
         }
-
-        clear();
         return true;
     }
 
@@ -194,6 +202,33 @@ public class RedisFeature extends SimpleFeature {
 
     protected Config config = Defaults.of(Config.class);
 
+
+    protected void registerComponentListener() {
+        Framework.getRuntime().getComponentManager().addComponentListener(new ComponentListener() {
+            private RedisComponent asRedisComponent(ComponentEvent event) {
+                ComponentInstance ci = event.registrationInfo.getComponent();
+                if (ci == null) {
+                    return null;
+                }
+                Object obj = ci.getInstance();
+                if (obj instanceof RedisComponent) {
+                    return (RedisComponent)obj;
+                }
+                return null;
+            }
+            @Override
+            public void handleEvent(ComponentEvent event) {
+                if (event.id == ComponentEvent.COMPONENT_ACTIVATED) {
+                    RedisComponent comp = asRedisComponent(event);
+                    if (comp != null) {
+                        // install configuration
+                        installConfig(comp);
+                    }
+                }
+            }
+        });
+    }
+
     @Override
     public void initialize(FeaturesRunner runner) throws Exception {
         config = runner.getConfig(Config.class);
@@ -203,6 +238,11 @@ public class RedisFeature extends SimpleFeature {
     @Override
     public void start(FeaturesRunner runner) throws Exception {
         setupMe(runner.getFeature(RuntimeFeature.class).getHarness());
+    }
+
+    @Override
+    public void beforeRun(FeaturesRunner runner) throws Exception {
+        clear();
     }
 
 }
