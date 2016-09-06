@@ -47,8 +47,6 @@ import org.nuxeo.ecm.platform.publisher.impl.service.ProxyTree;
 import org.nuxeo.ecm.platform.publisher.impl.service.PublisherServiceImpl;
 import org.nuxeo.ecm.platform.publisher.test.TestServiceWithCore.Populate;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.model.RegistrationInfo;
-import org.nuxeo.runtime.model.impl.DefaultRuntimeContext;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
@@ -287,31 +285,26 @@ public class TestServiceWithCore extends PublisherTestCase {
     }
 
     @Test
+    @Deploy("org.nuxeo.ecm.platform.publisher.test:OSGI-INF/publisher-remote-contrib-test.xml")
     public void testCleanUp() throws Exception {
-        RegistrationInfo ri = new DefaultRuntimeContext().deploy("OSGI-INF/publisher-remote-contrib-test.xml");
-        try {
+        PublisherServiceImpl service = (PublisherServiceImpl) Framework.getLocalService(PublisherService.class);
 
-            PublisherServiceImpl service = (PublisherServiceImpl) Framework.getLocalService(PublisherService.class);
+        assertEquals(0, service.getLiveTreeCount());
 
-            assertEquals(0, service.getLiveTreeCount());
+        // get a local tree
+        PublicationTree ltree = service.getPublicationTree("DefaultSectionsTree-default-domain", session, null);
+        assertEquals(1, service.getLiveTreeCount());
 
-            // get a local tree
-            PublicationTree ltree = service.getPublicationTree("DefaultSectionsTree-default-domain", session, null);
-            assertEquals(1, service.getLiveTreeCount());
+        // get a remote tree
+        PublicationTree rtree = service.getPublicationTree("ClientRemoteTree", session, null);
+        assertEquals(3, service.getLiveTreeCount());
 
-            // get a remote tree
-            PublicationTree rtree = service.getPublicationTree("ClientRemoteTree", session, null);
-            assertEquals(3, service.getLiveTreeCount());
+        // release local tree
+        ltree.release();
+        assertEquals(2, service.getLiveTreeCount());
 
-            // release local tree
-            ltree.release();
-            assertEquals(2, service.getLiveTreeCount());
-
-            // release remote tree
-            rtree.release();
-            assertEquals(0, service.getLiveTreeCount());
-        } finally {
-            ri.getManager().unregister(ri);
-        }
+        // release remote tree
+        rtree.release();
+        assertEquals(0, service.getLiveTreeCount());
     }
 }

@@ -21,24 +21,24 @@
 
 package org.nuxeo.ecm.platform.mail.service;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.mail.Address;
+import javax.mail.Flags.Flag;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.Transport;
-import javax.mail.Flags.Flag;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-import org.junit.Before;
-import org.junit.After;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.nuxeo.ecm.platform.mail.action.ExecutionContext;
 import org.nuxeo.ecm.platform.mail.action.MailBoxActions;
 import org.nuxeo.ecm.platform.mail.action.MessageAction;
@@ -66,10 +66,8 @@ public class TestMailService extends NXRuntimeTestCase {
 
     MailService mailService;
 
-    @Before
+    @Override
     public void setUp() throws Exception {
-        // Server.start();
-        super.setUp();
         deployBundle("org.nuxeo.ecm.webapp.base");
         // deployBundle("org.nuxeo.ecm.platform.mail");
         // deployBundle("org.nuxeo.ecm.platform.mail.test");
@@ -77,9 +75,8 @@ public class TestMailService extends NXRuntimeTestCase {
         // internetAddress = new InternetAddress("alex@localhost");
     }
 
-    @After
+    @Override
     public void tearDown() throws Exception {
-        super.tearDown();
         Server.shutdown();
     }
 
@@ -161,6 +158,8 @@ public class TestMailService extends NXRuntimeTestCase {
     @Test
     public void testServiceRegistration() throws Exception {
         deployBundle("org.nuxeo.ecm.platform.mail");
+        applyInlineDeployments();
+
         MailService mailService = Framework.getLocalService(MailService.class);
         assertNotNull(mailService);
         MessageActionPipe pipe = mailService.getPipe("nxmail");
@@ -173,6 +172,9 @@ public class TestMailService extends NXRuntimeTestCase {
         // assertEquals(pipe.get(4).getClass().getSimpleName(), "EndAction");
         // test contribution merge
         deployContrib("org.nuxeo.ecm.platform.mail.test", "OSGI-INF/mailService-test-contrib.xml");
+        applyInlineDeployments();
+        mailService = Framework.getLocalService(MailService.class);
+
         pipe = mailService.getPipe("nxmail");
         assertNotNull(pipe);
         assertEquals(4, pipe.size());
@@ -183,6 +185,9 @@ public class TestMailService extends NXRuntimeTestCase {
         // assertEquals(pipe.get(4).getClass().getSimpleName(), "EndAction");
         // test contribution override
         deployContrib("org.nuxeo.ecm.platform.mail.test", "OSGI-INF/mailService-override-test-contrib.xml");
+        applyInlineDeployments();
+        mailService = Framework.getLocalService(MailService.class);
+
         pipe = mailService.getPipe("nxmail");
         assertNotNull(pipe);
         assertEquals(2, pipe.size());
@@ -194,11 +199,13 @@ public class TestMailService extends NXRuntimeTestCase {
     static class TestMailAction implements MessageAction {
         private static int counter;
 
+        @Override
         public boolean execute(ExecutionContext context) {
             counter++;
             return true;
         }
 
+        @Override
         public void reset(ExecutionContext context) {
         }
     }

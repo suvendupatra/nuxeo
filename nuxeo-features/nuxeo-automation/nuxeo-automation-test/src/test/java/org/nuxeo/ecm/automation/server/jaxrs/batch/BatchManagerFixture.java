@@ -40,8 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.inject.Inject;
-
 import org.apache.commons.collections.ListUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,7 +54,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 import org.nuxeo.transientstore.test.TransientStoreFeature;
 
 /**
@@ -67,9 +64,6 @@ import org.nuxeo.transientstore.test.TransientStoreFeature;
 @Deploy({ "org.nuxeo.ecm.automation.core", "org.nuxeo.ecm.platform.web.common", "org.nuxeo.ecm.webengine.core",
         "org.nuxeo.ecm.automation.io", "org.nuxeo.ecm.automation.server" })
 public class BatchManagerFixture {
-
-    @Inject
-    protected RuntimeHarness harness;
 
     @Test
     public void testServiceRegistred() {
@@ -103,9 +97,8 @@ public class BatchManagerFixture {
     }
 
     @Test
+    @Deploy("org.nuxeo.ecm.automation.test.test:test-batchmanager-client-generated-id-allowed-contrib.xml")
     public void testBatchInitClientGeneratedIdAllowed() throws Exception {
-        harness.deployContrib("org.nuxeo.ecm.automation.test.test",
-                "test-batchmanager-client-generated-id-allowed-contrib.xml");
         BatchManager bm = Framework.getService(BatchManager.class);
         String batchId = ((BatchManagerComponent) bm).initBatchInternal("testBatchId").getKey();
         assertEquals("testBatchId", batchId);
@@ -113,8 +106,6 @@ public class BatchManagerFixture {
         Batch batch = ((BatchManagerComponent) bm).getBatch("testBatchId");
         assertNotNull(batch);
         assertEquals("testBatchId", batch.getKey());
-        harness.undeployContrib("org.nuxeo.ecm.automation.test.test",
-                "test-batchmanager-client-generated-id-allowed-contrib.xml");
     }
 
     @Test

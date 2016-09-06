@@ -48,7 +48,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 
 /**
  * Test the {@link org.nuxeo.ecm.platform.picture.api.PictureConversion} contributions.
@@ -77,8 +76,6 @@ public class TestPictureConversions {
     @Inject
     protected ImagingService imagingService;
 
-    @Inject
-    protected RuntimeHarness runtimeHarness;
 
     protected List<String> getPictureConversionIds() {
         List<String> ids = new ArrayList<>();
@@ -100,9 +97,8 @@ public class TestPictureConversions {
     }
 
     @Test
+    @Deploy(PICTURE_CORE+":"+PICTURE_CONVERSIONS_OVERRIDE_MORE_COMPONENT_LOCATION)
     public void iHavePictureConversionsOrder() throws Exception {
-        deployContrib(PICTURE_CONVERSIONS_OVERRIDE_MORE_COMPONENT_LOCATION);
-
         String[] expectedPictureConversionsOrder = new String[] { "ThumbnailMini", "Tiny", "Wide", "ThumbnailWide",
                 "Small", "Medium", "FullHD" };
         List<PictureConversion> pictureConversions = imagingService.getPictureConversions();
@@ -112,14 +108,11 @@ public class TestPictureConversions {
         for (int i = 0; i < expectedPictureConversionsOrder.length; i++) {
             assertEquals(expectedPictureConversionsOrder[i], pictureConversions.get(i).getId());
         }
-
-        undeployContrib(PICTURE_CONVERSIONS_OVERRIDE_MORE_COMPONENT_LOCATION);
     }
 
     @Test
+    @Deploy(PICTURE_CORE+":"+PICTURE_CONVERSIONS_OVERRIDE_COMPONENT_LOCATION)
     public void iCanMergePictureConversions() throws Exception {
-        deployContrib(PICTURE_CONVERSIONS_OVERRIDE_COMPONENT_LOCATION);
-
         for (PictureConversion pictureConversion : imagingService.getPictureConversions()) {
             switch (pictureConversion.getId()) {
             case "Original":
@@ -138,14 +131,11 @@ public class TestPictureConversions {
                 break;
             }
         }
-
-        undeployContrib(PICTURE_CONVERSIONS_OVERRIDE_COMPONENT_LOCATION);
     }
 
     @Test
+    @Deploy(PICTURE_CORE+":"+PICTURE_CONVERSIONS_OVERRIDE_MORE_COMPONENT_LOCATION)
     public void iCanMergeMorePictureConversions() throws Exception {
-        deployContrib(PICTURE_CONVERSIONS_OVERRIDE_MORE_COMPONENT_LOCATION);
-
         int count = 0;
         List<String> newPictureConversions = Arrays.asList("ThumbnailMini", "ThumbnailWide", "Tiny", "Wide");
 
@@ -163,14 +153,11 @@ public class TestPictureConversions {
         assertEquals(320, (int) imagingService.getPictureConversion("ThumbnailWide").getMaxSize());
         assertEquals(48, (int) imagingService.getPictureConversion("Tiny").getMaxSize());
         assertEquals(2048, (int) imagingService.getPictureConversion("Wide").getMaxSize());
-
-        undeployContrib(PICTURE_CONVERSIONS_OVERRIDE_MORE_COMPONENT_LOCATION);
     }
 
     @Test
+    @Deploy(PICTURE_CORE+":"+PICTURE_CONVERSIONS_FILTERS_COMPONENT_LOCATION)
     public void shouldFilterPictureConversions() throws Exception {
-        deployContrib(PICTURE_CONVERSIONS_FILTERS_COMPONENT_LOCATION);
-
         DocumentModel picture = session.createDocumentModel("/", "picture", "Picture");
         Blob blob = Blobs.createBlob(FileUtils.getResourceFileFromContext("images/test.jpg"));
         blob.setFilename("MyTest.jpg");
@@ -208,16 +195,6 @@ public class TestPictureConversions {
         assertEquals(6, multiviewPicture.getViews().length);
         assertNotNull(multiviewPicture.getView("smallConversion"));
         assertNull(multiviewPicture.getView("anotherSmallConversion"));
-
-        undeployContrib(PICTURE_CONVERSIONS_FILTERS_COMPONENT_LOCATION);
-    }
-
-    private void deployContrib(String component) throws Exception {
-        runtimeHarness.deployContrib(PICTURE_CORE, component);
-    }
-
-    private void undeployContrib(String component) throws Exception {
-        runtimeHarness.undeployContrib(PICTURE_CORE, component);
     }
 
 }

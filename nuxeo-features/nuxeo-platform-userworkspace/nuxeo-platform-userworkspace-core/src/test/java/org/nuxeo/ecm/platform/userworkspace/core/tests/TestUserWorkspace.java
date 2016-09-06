@@ -45,7 +45,6 @@ import org.nuxeo.ecm.platform.userworkspace.api.UserWorkspaceService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 
 @RunWith(FeaturesRunner.class)
 @Features(PlatformFeature.class)
@@ -54,9 +53,6 @@ import org.nuxeo.runtime.test.runner.RuntimeHarness;
         "org.nuxeo.ecm.platform.userworkspace.core", //
 })
 public class TestUserWorkspace {
-
-    @Inject
-    protected RuntimeHarness harness;
 
     @Inject
     protected CoreFeature coreFeature;

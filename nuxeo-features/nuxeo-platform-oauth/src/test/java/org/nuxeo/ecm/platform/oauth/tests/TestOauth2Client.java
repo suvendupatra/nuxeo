@@ -23,20 +23,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.io.FileInputStream;
-
 import javax.inject.Inject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.platform.oauth2.clients.ClientRegistry;
 import org.nuxeo.ecm.platform.oauth2.clients.OAuth2Client;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.model.RegistrationInfo;
-import org.nuxeo.runtime.model.impl.ComponentDescriptorReader;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 
 /**
  * @author <a href="mailto:ak@nuxeo.com">Arnaud Kervern</a>
@@ -46,6 +41,9 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 @RunWith(FeaturesRunner.class)
 @Features(OAuthFeature.class)
 public class TestOauth2Client {
+
+    @Inject
+    HotDeployer deployer;
 
     @Inject
     ClientRegistry registry;
@@ -79,18 +77,11 @@ public class TestOauth2Client {
     @Test
     public void clientComponentRegistration() throws Exception {
         assertEquals(0, registry.listClients().size());
-        localDeploy("/OSGI-INF/oauth2-client-config.xml");
+        deployer.deploy("org.nuxeo.ecm.platform.oauth:OSGI-INF/oauth2-client-config.xml");
 
         assertEquals(2, registry.listClients().size());
         assertTrue(registry.deleteClient("xxx-xxx"));
         assertTrue(registry.deleteClient("yyy-yyy"));
         assertEquals(0, registry.listClients().size());
-    }
-
-    protected void localDeploy(String filename) throws Exception {
-        ComponentDescriptorReader reader = new ComponentDescriptorReader();
-        File file = new File(this.getClass().getResource(filename).toURI());
-        RegistrationInfo info = reader.read(Framework.getRuntime().getContext(), new FileInputStream(file));
-        Framework.getRuntime().getComponentManager().register(info);
     }
 }

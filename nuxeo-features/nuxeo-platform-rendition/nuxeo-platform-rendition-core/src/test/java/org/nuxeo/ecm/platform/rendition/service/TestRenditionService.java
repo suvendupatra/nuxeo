@@ -82,8 +82,8 @@ import org.nuxeo.ecm.platform.usermanager.UserManager;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
@@ -115,7 +115,7 @@ public class TestRenditionService {
     public static final Log log = LogFactory.getLog(TestRenditionService.class);
 
     @Inject
-    protected RuntimeHarness runtimeHarness;
+    protected HotDeployer deployer;
 
     @Inject
     protected CoreFeature coreFeature;
@@ -963,7 +963,7 @@ public class TestRenditionService {
 
     @Test
     public void shouldFilterRenditionDefinitions() throws Exception {
-        runtimeHarness.deployContrib(RENDITION_CORE, RENDITION_FILTERS_COMPONENT_LOCATION);
+        deployer.deploy(RENDITION_CORE+":"+RENDITION_FILTERS_COMPONENT_LOCATION);
 
         List<RenditionDefinition> availableRenditionDefinitions;
         Rendition rendition;
@@ -1005,13 +1005,11 @@ public class TestRenditionService {
         availableRenditionDefinitions = renditionService.getAvailableRenditionDefinitions(doc);
         assertRenditionDefinitions(availableRenditionDefinitions, "renditionOnlyForFolder", "zipTreeExport",
                 "zipTreeExportLazily");
-
-        runtimeHarness.undeployContrib(RENDITION_CORE, RENDITION_FILTERS_COMPONENT_LOCATION);
     }
 
     @Test
     public void shouldFilterRenditionDefinitionProviders() throws Exception {
-        runtimeHarness.deployContrib(RENDITION_CORE, RENDITION_DEFINITION_PROVIDERS_COMPONENT_LOCATION);
+        deployer.deploy(RENDITION_CORE+":"+RENDITION_DEFINITION_PROVIDERS_COMPONENT_LOCATION);
 
         DocumentModel doc = session.createDocumentModel("/", "note", "Note");
         doc = session.createDocument(doc);
@@ -1034,8 +1032,6 @@ public class TestRenditionService {
         availableRenditionDefinitions = renditionService.getAvailableRenditionDefinitions(doc);
         assertRenditionDefinitions(availableRenditionDefinitions, "dummyRendition1", "dummyRendition2", "zipTreeExport",
                 "zipTreeExportLazily");
-
-        runtimeHarness.undeployContrib(RENDITION_CORE, RENDITION_DEFINITION_PROVIDERS_COMPONENT_LOCATION);
     }
 
     protected static void assertRenditionDefinitions(List<RenditionDefinition> actual, String... otherExpected) {

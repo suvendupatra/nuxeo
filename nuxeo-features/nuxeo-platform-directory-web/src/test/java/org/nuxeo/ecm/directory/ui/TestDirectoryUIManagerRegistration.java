@@ -18,14 +18,16 @@
  */
 package org.nuxeo.ecm.directory.ui;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
-import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.directory.api.DirectoryDeleteConstraint;
+import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.directory.api.ui.DirectoryUI;
 import org.nuxeo.ecm.directory.api.ui.DirectoryUIManager;
 import org.nuxeo.ecm.directory.api.ui.HierarchicalDirectoryUIDeleteConstraint;
@@ -41,10 +43,8 @@ public class TestDirectoryUIManagerRegistration extends NXRuntimeTestCase {
 
     DirectoryUIManager service;
 
-    @Before
+    @Override
     public void setUp() throws Exception {
-        super.setUp();
-
         // deploy directory
         deployBundle("org.nuxeo.ecm.directory");
         // deploy directory ui service
@@ -52,7 +52,10 @@ public class TestDirectoryUIManagerRegistration extends NXRuntimeTestCase {
 
         // deploy test dirs + ui config
         deployContrib("org.nuxeo.ecm.directory.web.tests", "OSGI-INF/test-directory-ui-contrib.xml");
+    }
 
+    @Override
+    protected void postSetUp() throws Exception {
         service = Framework.getService(DirectoryUIManager.class);
         assertNotNull(service);
 
@@ -94,6 +97,8 @@ public class TestDirectoryUIManagerRegistration extends NXRuntimeTestCase {
     @Test
     public void testDirectoryUIOverride() throws Exception {
         deployContrib("org.nuxeo.ecm.directory.web.tests", "OSGI-INF/test-directory-ui-override-contrib.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         List<String> dirs = service.getDirectoryNames();
         assertNotNull(dirs);

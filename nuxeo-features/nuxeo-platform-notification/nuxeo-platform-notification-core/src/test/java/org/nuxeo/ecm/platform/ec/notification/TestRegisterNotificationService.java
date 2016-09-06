@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.platform.ec.notification.email.EmailHelper;
@@ -48,25 +47,21 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
 
     private static final String BUNDLE_TEST_NAME = "org.nuxeo.ecm.platform.notification.core.tests";
 
-    NotificationService notificationService;
-
     EmailHelper mailHelper = new EmailHelper();
 
     @Override
-    @Before
     public void setUp() throws Exception {
-        super.setUp();
-
         File propertiesFile = FileUtils.getResourceFileFromContext("notifications.properties");
         InputStream notificationsProperties = new FileInputStream(propertiesFile);
         runtime.loadProperties(notificationsProperties);
-
         deployContrib("org.nuxeo.ecm.platform.notification.core", "OSGI-INF/NotificationService.xml");
     }
 
     @Test
     public void testRegistration() throws Exception {
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib.xml");
+        applyInlineDeployments();
+
         List<Notification> notifications = getService().getNotificationsForEvents("testEvent");
 
         assertEquals(1, notifications.size());
@@ -98,6 +93,7 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
     @Test
     public void testRegistrationDisabled() throws Exception {
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib-disabled.xml");
+        applyInlineDeployments();
         List<Notification> notifications = getService().getNotificationsForEvents("testEvent");
 
         assertEquals(0, notifications.size());
@@ -106,10 +102,12 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
     @Test
     public void testRegistrationOverrideWithDisabled() throws Exception {
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib.xml");
+        applyInlineDeployments();
         List<Notification> notifications = getService().getNotificationsForEvents("testEvent");
 
         assertEquals(1, notifications.size());
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib-disabled.xml");
+        applyInlineDeployments();
         notifications = getService().getNotificationsForEvents("testEvent");
 
         assertEquals(0, notifications.size());
@@ -119,6 +117,7 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
     public void testRegistrationOverride() throws Exception {
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib.xml");
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib-overridden.xml");
+        applyInlineDeployments();
 
         List<Notification> notifications = getService().getNotificationsForEvents("testEvent");
         assertEquals(0, notifications.size());
@@ -150,6 +149,7 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
     @Test
     public void testExpandVarsInGeneralSettings() throws Exception {
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib.xml");
+        applyInlineDeployments();
 
         assertEquals("http://localhost:8080/nuxeo/", getService().getServerUrlPrefix());
         assertEquals("[Nuxeo5]", getService().getEMailSubjectPrefix());
@@ -158,6 +158,7 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
         assertEquals("java:/Mail", getService().getMailSessionJndiName());
 
         deployContrib(BUNDLE_TEST_NAME, "notification-contrib-overridden.xml");
+        applyInlineDeployments();
 
         assertEquals("http://testServerPrefix/nuxeo", getService().getServerUrlPrefix());
         assertEquals("testSubjectPrefix", getService().getEMailSubjectPrefix());
@@ -170,6 +171,7 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
     public void testVetoRegistration() throws Exception {
         deployContrib(BUNDLE_TEST_NAME, "notification-veto-contrib.xml");
         deployContrib(BUNDLE_TEST_NAME, "notification-veto-contrib-overridden.xml");
+        applyInlineDeployments();
 
         Collection<NotificationListenerVeto> vetos = getService().getNotificationVetos();
         assertEquals(2, vetos.size());
@@ -181,10 +183,7 @@ public class TestRegisterNotificationService extends NXRuntimeTestCase {
     }
 
     public NotificationService getService() {
-        if (notificationService == null) {
-            notificationService = (NotificationService) Framework.getLocalService(NotificationManager.class);
-        }
-        return notificationService;
+        return (NotificationService) Framework.getLocalService(NotificationManager.class);
     }
 
 }
