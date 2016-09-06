@@ -68,7 +68,7 @@ public class RepositoryService extends DefaultComponent {
 
     @Override
     public void start(ComponentContext context) {
-        TransactionHelper.runInTransaction(this::initRepositories);
+        initRepositories();
     }
 
     @Override
@@ -77,11 +77,19 @@ public class RepositoryService extends DefaultComponent {
     }
 
     /**
-     * Initializes all repositories. Run in a transaction.
+     * Start a tx and initialize repositories content.
+     * This method is publicly exposed since it is needed by tests to initialize repositories after cleanups (see CoreFeature).
+     */
+    public void initRepositories() {
+        TransactionHelper.runInTransaction(this::doInitRepositories);
+    }
+
+    /**
+     * Initializes all repositories. Requires an active transaction.
      *
      * @since 8.4
      */
-    protected void initRepositories() {
+    protected void doInitRepositories() {
         RepositoryManager repositoryManager = Framework.getLocalService(RepositoryManager.class);
         for (String name : repositoryManager.getRepositoryNames()) {
             openRepository(name);

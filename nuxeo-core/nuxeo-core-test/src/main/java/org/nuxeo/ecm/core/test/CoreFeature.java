@@ -345,9 +345,9 @@ public class CoreFeature extends SimpleFeature {
 
     protected void initializeSession(FeaturesRunner runner) {
         if (cleaned) {
-            // re-trigger application started
+            // reinitialize repositories content
             RepositoryService repositoryService = Framework.getLocalService(RepositoryService.class);
-            repositoryService.applicationStarted(null);
+            repositoryService.initRepositories();
             cleaned = false;
         }
         CoreScope.INSTANCE.enter();
