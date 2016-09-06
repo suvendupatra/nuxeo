@@ -74,6 +74,9 @@ public class ApplicationManager implements BundleTrackerCustomizer {
         }
         return host;
     }
+    public synchronized ApplicationHost[] getApplications() {
+        return apps.values().toArray(new ApplicationHost[apps.size()]);
+    }
 
     public synchronized ApplicationHost getApplication(String name) {
         return apps.get(name);

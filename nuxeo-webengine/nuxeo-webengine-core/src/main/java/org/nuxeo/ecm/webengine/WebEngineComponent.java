@@ -81,15 +81,22 @@ public class WebEngineComponent extends DefaultComponent { // implements
         log.info("Using web root: " + root);
 
         engine = new WebEngine(new File(root, "root.war"));
-
-        engine.start();
     }
 
     @Override
     public void deactivate(ComponentContext context) {
-        engine.stop();
         engine = null;
         super.deactivate(context);
+    }
+
+    @Override
+    public void start(ComponentContext context) {
+        engine.start();
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+        engine.stop();
     }
 
     public WebEngine getEngine() {

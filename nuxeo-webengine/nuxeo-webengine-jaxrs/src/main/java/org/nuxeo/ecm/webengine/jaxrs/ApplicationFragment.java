@@ -45,6 +45,10 @@ public class ApplicationFragment extends Application {
 
     private volatile Application app;
 
+    public Application getApplication() {
+        return app;
+    }
+
     public static Map<String, String> createAttributes(String hostName) {
         HashMap<String, String> attrs = new HashMap<String, String>();
         if (hostName != null) {

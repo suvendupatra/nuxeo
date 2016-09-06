@@ -33,6 +33,7 @@ import java.util.Properties;
 import javax.servlet.GenericServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Application;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -41,6 +42,9 @@ import org.nuxeo.ecm.platform.rendering.api.RenderingEngine;
 import org.nuxeo.ecm.platform.rendering.api.ResourceLocator;
 import org.nuxeo.ecm.platform.rendering.fm.FreemarkerEngine;
 import org.nuxeo.ecm.webengine.app.WebEngineModule;
+import org.nuxeo.ecm.webengine.jaxrs.ApplicationFragment;
+import org.nuxeo.ecm.webengine.jaxrs.ApplicationHost;
+import org.nuxeo.ecm.webengine.jaxrs.ApplicationManager;
 import org.nuxeo.ecm.webengine.jaxrs.context.RequestContext;
 import org.nuxeo.ecm.webengine.loader.WebLoader;
 import org.nuxeo.ecm.webengine.model.Module;
@@ -392,10 +396,25 @@ public class WebEngine implements ResourceLocator {
     }
 
     public void start() {
+        // reconnect to the application manager and collect available web engine modules.
+        // This must be done after a component manager restart
+        // On the first start (i.e. at runtime booting) this will
+        // never find available web engine modules to connect with
+        // This will found something only after a component manager restart
+        ApplicationHost[] hosts = ApplicationManager.getInstance().getApplications();
+        for (ApplicationHost host : hosts) {
+            for (ApplicationFragment fragment : host.getApplications()) {
+                Application app = fragment.getApplication();
+                if (app instanceof WebEngineModule) {
+                    addApplication((WebEngineModule)app);
+                }
+            }
+        }
     }
 
     public void stop() {
         registry.clear();
+        moduleMgr = null;
     }
 
     protected ModuleConfiguration getModuleFromPath(String rootPath, String path) {
