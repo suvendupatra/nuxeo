@@ -33,8 +33,8 @@ import org.nuxeo.ecm.directory.sql.SQLDirectory;
 import org.nuxeo.ecm.directory.sql.SQLDirectoryFeature;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 
 /**
  * Test hot reload of registrations using mock directory factories
@@ -49,7 +49,7 @@ import org.nuxeo.runtime.test.runner.RuntimeHarness;
 public class TestDirectoryServiceRegistration {
 
     @Inject
-    protected RuntimeHarness harness;
+    protected HotDeployer deployer;
 
     @Inject
     protected DirectoryService directoryService;
@@ -59,11 +59,15 @@ public class TestDirectoryServiceRegistration {
         Directory dir = directoryService.getDirectory("userDirectory");
         assertTrue(dir instanceof SQLDirectory);
 
-        harness.deployContrib("org.nuxeo.ecm.directory.sql.tests", "test-directories-memory-factory.xml");
-        harness.deployContrib("org.nuxeo.ecm.directory.sql.tests", "test-directories-several-factories.xml");
+        deployer.deploy("org.nuxeo.ecm.directory.sql.tests:test-directories-memory-factory.xml",
+                "org.nuxeo.ecm.directory.sql.tests:test-directories-several-factories.xml");
 
         dir = directoryService.getDirectory("userDirectory");
         assertTrue(dir instanceof MemoryDirectory);
+
+        // TODO if we don't remove the inline contribs the SQLDirectoryFeature will throw an exception? May be a bug?
+        deployer.reset(); // this will restart and remove the inline contributions
+
     }
 
 }

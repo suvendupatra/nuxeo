@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.FileInputStream;
 
 import org.artofsolving.jodconverter.OfficeDocumentConverter;
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.nuxeo.ecm.platform.convert.ooomanager.OOoManagerComponent;
