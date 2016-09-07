@@ -35,8 +35,6 @@ import javax.management.modelmbean.RequiredModelMBean;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.runtime.RuntimeServiceEvent;
-import org.nuxeo.runtime.RuntimeServiceListener;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.management.inspector.ModelMBeanInfoFactory;
 import org.nuxeo.runtime.model.ComponentContext;
@@ -360,21 +358,16 @@ public class ResourcePublisherService extends DefaultComponent implements Resour
     protected boolean started = false;
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         started = true;
         factoriesRegistry.doRegisterResources();
         doBindResources();
-        Framework.addListener(new RuntimeServiceListener() {
+    }
 
-            @Override
-            public void handleEvent(RuntimeServiceEvent event) {
-                if (event.id != RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP) {
-                    return;
-                }
-                Framework.removeListener(this);
-                doUnbindResources();
-            }
-        });
+    @Override
+    public void stop(ComponentContext context) {
+        started = false;
+        doUnbindResources();
     }
 
     @Override

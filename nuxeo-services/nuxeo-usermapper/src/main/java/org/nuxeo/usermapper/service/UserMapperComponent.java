@@ -61,17 +61,6 @@ public class UserMapperComponent extends DefaultComponent implements UserMapperS
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        for (UserMapperDescriptor desc : descriptors) {
-            try {
-                mappers.put(desc.name, desc.getInstance());
-            } catch (Exception e) {
-                log.error("Unable to register mapper " + desc.name, e);
-            }
-        }
-    }
-
-    @Override
     public void unregisterContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
         if (MAPPER_EP.equalsIgnoreCase(extensionPoint)) {
             UserMapperDescriptor desc = (UserMapperDescriptor) contribution;
@@ -79,6 +68,17 @@ public class UserMapperComponent extends DefaultComponent implements UserMapperS
             if (um != null) {
                 um.release();
                 mappers.remove(desc.name);
+            }
+        }
+    }
+
+    @Override
+    public void start(ComponentContext context) {
+        for (UserMapperDescriptor desc : descriptors) {
+            try {
+                mappers.put(desc.name, desc.getInstance());
+            } catch (Exception e) {
+                log.error("Unable to register mapper " + desc.name, e);
             }
         }
     }

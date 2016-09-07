@@ -188,7 +188,7 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         if (!isElasticsearchEnabled()) {
             log.info("Elasticsearch service is disabled");
             return;
@@ -199,6 +199,13 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
         initListenerThreadPool();
         processStackedCommands();
         reindexOnStartup();
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+        if (esa != null) {
+            esa.disconnect();
+        }
     }
 
     private void reindexOnStartup() {
@@ -224,13 +231,6 @@ public class ElasticSearchComponent extends DefaultComponent implements ElasticS
 
     protected boolean isElasticsearchEnabled() {
         return Boolean.parseBoolean(Framework.getProperty(ES_ENABLED_PROPERTY, "true"));
-    }
-
-    @Override
-    public void deactivate(ComponentContext context) {
-        if (esa != null) {
-            esa.disconnect();
-        }
     }
 
     @Override

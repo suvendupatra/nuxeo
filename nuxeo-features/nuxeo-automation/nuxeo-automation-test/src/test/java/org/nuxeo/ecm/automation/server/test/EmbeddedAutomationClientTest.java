@@ -42,11 +42,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 
-import org.junit.Assert;
-
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.hamcrest.number.IsCloseTo;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -148,7 +147,7 @@ public class EmbeddedAutomationClientTest extends AbstractAutomationClientTest {
         ComponentInstance componentInstance = Framework.getRuntime().getComponentInstance(
                 "org.nuxeo.ecm.automation.server.AutomationServer");
         AutomationServerComponent automationServerComponent = (AutomationServerComponent) componentInstance.getInstance();
-        automationServerComponent.applicationStarted(componentInstance);
+        automationServerComponent.start(componentInstance);
     }
 
     /**

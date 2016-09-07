@@ -207,11 +207,6 @@ public class JettyComponent extends DefaultComponent {
     @Override
     public void deactivate(ComponentContext context) {
         ctxMgr = null;
-        try {
-            server.stop();
-        } catch (Exception e) { // stupid Jetty API throws Exception
-            throw ExceptionUtils.runtimeException(e);
-        }
         server = null;
     }
 
@@ -321,7 +316,7 @@ public class JettyComponent extends DefaultComponent {
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         if (server == null) {
             return;
         }
@@ -335,6 +330,15 @@ public class JettyComponent extends DefaultComponent {
             throw ExceptionUtils.runtimeException(e);
         } finally {
             t.setContextClassLoader(getClassLoader(oldcl));
+        }
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+        try {
+            server.stop();
+        } catch (Exception e) { // stupid Jetty API throws Exception
+            throw ExceptionUtils.runtimeException(e);
         }
     }
 

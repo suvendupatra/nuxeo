@@ -392,7 +392,7 @@ public class RelationService extends DefaultComponent implements RelationManager
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         RepositoryService repositoryService = Framework.getService(RepositoryService.class);
         if (repositoryService == null) {
             // RepositoryService failed to start, no need to go further

@@ -102,7 +102,7 @@ public class PublisherServiceImpl extends DefaultComponent implements PublisherS
     protected static final String RELATIVE_ROOT_PATH_KEY = "RelativeRootPath";
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         RepositoryService repositoryService = Framework.getService(RepositoryService.class);
         if (repositoryService == null) {
             // RepositoryService failed to start, no need to go further

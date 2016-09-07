@@ -158,10 +158,16 @@ public class ContributionPersistenceComponent extends DefaultComponent implement
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         if (storage == null) {
             storage = new FileSystemStorage();
             start();
         }
     }
+
+    @Override
+    public void stop(ComponentContext context) {
+        stop();
+    }
+
 }

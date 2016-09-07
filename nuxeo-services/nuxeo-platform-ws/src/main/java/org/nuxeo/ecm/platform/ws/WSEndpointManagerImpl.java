@@ -78,7 +78,7 @@ public class WSEndpointManagerImpl extends DefaultComponent implements WSEndpoin
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         if (!Framework.isTestModeSet()) {
             publishEndpoints();
         }

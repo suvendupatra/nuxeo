@@ -70,8 +70,7 @@ public class IOComponent extends DefaultComponent {
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        super.applicationStarted(context);
+    public void start(ComponentContext context) {
         codecs.postInit();
     }
 

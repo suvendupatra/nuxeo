@@ -36,16 +36,18 @@ public class CounterManagerImpl extends DefaultComponent implements CounterManag
 
     protected CounterHistoryRecorder history = new CounterHistoryRecorder(50);
 
+    @Override
     public void enableCounters() {
         SimonManager.getCounter(COUNTER_PREFIX).setState(SimonState.ENABLED, true);
     }
 
+    @Override
     public void disableCounters() {
         SimonManager.getCounter(COUNTER_PREFIX).setState(SimonState.DISABLED, true);
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         // create the root counter
         SimonManager.getCounter(COUNTER_PREFIX);
         // register call back for history management
@@ -87,6 +89,7 @@ public class CounterManagerImpl extends DefaultComponent implements CounterManag
         }
     }
 
+    @Override
     public CounterHistoryStack getCounterHistory(String counterName) {
 
         CounterHistoryStack stack = history.getCounterHistory(counterName);

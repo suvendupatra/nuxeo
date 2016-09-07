@@ -144,8 +144,7 @@ public class OpenIDConnectProviderRegistryImpl extends DefaultComponent implemen
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        super.applicationStarted(context);
+    public void start(ComponentContext context) {
         registerPendingProviders();
     }
 

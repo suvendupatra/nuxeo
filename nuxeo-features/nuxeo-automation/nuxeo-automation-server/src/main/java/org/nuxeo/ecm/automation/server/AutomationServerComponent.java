@@ -107,11 +107,6 @@ public class AutomationServerComponent extends DefaultComponent implements Autom
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        super.applicationStarted(context);
-    }
-
-    @Override
     public RestBinding getOperationBinding(String name) {
         return lookup().get(name);
     }

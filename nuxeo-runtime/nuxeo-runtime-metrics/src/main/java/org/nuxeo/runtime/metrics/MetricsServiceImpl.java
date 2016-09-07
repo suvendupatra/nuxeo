@@ -55,7 +55,18 @@ public class MetricsServiceImpl extends DefaultComponent implements MetricsServi
     }
 
     @Override
-    public void deactivate(ComponentContext context) {
+    public void start(ComponentContext context) {
+        if (config == null) {
+            // Use a default config
+            config = new MetricsDescriptor();
+        }
+        log.info("Setting up metrics configuration");
+        config.enable(registry);
+        instanceUp.inc();
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
         try {
             config.disable(registry);
         } finally {
@@ -67,18 +78,7 @@ public class MetricsServiceImpl extends DefaultComponent implements MetricsServi
             // should remove the reference also
             SharedMetricRegistries.remove(MetricsService.class.getName());;
         }
-        log.debug("Deactivate component.");
-    }
-
-    @Override
-    public void applicationStarted(ComponentContext context) {
-        if (config == null) {
-            // Use a default config
-            config = new MetricsDescriptor();
-        }
-        log.info("Setting up metrics configuration");
-        config.enable(registry);
-        instanceUp.inc();
+        log.debug("Stopped metrics service.");
     }
 
 }

@@ -37,9 +37,6 @@ import org.nuxeo.ecm.platform.audit.service.extension.AuditBackendDescriptor;
 import org.nuxeo.ecm.platform.audit.service.extension.AuditBulkerDescriptor;
 import org.nuxeo.ecm.platform.audit.service.extension.EventDescriptor;
 import org.nuxeo.ecm.platform.audit.service.extension.ExtendedInfoDescriptor;
-import org.nuxeo.runtime.RuntimeServiceEvent;
-import org.nuxeo.runtime.RuntimeServiceListener;
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.ComponentName;
@@ -96,31 +93,25 @@ public class NXAuditEventsService extends DefaultComponent {
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         backend = backendConfig.newInstance(this);
         backend.onApplicationStarted();
         bulker = bulkerConfig.newInstance(backend);
         bulker.onApplicationStarted();
-        Framework.addListener(new RuntimeServiceListener() {
+    }
 
-            @Override
-            public void handleEvent(RuntimeServiceEvent event) {
-                if (event.id != RuntimeServiceEvent.RUNTIME_STOPPED) {
-                    return;
-                }
-                Framework.removeListener(this);
-                try {
-                    backend.onShutdown();
-                } finally {
-                    try {
-                        bulker.onShutdown();
-                    } finally {
-                        bulker = null;
-                    }
-                    backend = null;
-                }
+    @Override
+    public void stop(ComponentContext context) {
+        try {
+            backend.onShutdown();
+        } finally {
+            try {
+                bulker.onShutdown();
+            } finally {
+                bulker = null;
             }
-        });
+            backend = null;
+        }
     }
 
     protected void doRegisterAdapter(AdapterDescriptor desc) {

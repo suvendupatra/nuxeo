@@ -72,7 +72,7 @@ public class DirectoryServiceImpl extends DefaultComponent implements DirectoryS
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
+    public void start(ComponentContext context) {
         if (Framework.isTestModeSet()) {
             // when testing, DatabaseHelper init hasn't occurred yet,
             // so keep to lazy initialization
