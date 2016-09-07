@@ -47,7 +47,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 
 @RunWith(FeaturesRunner.class)
 @Features(CoreFeature.class)
@@ -77,8 +76,6 @@ public class TestFileManagerVersioning {
 
     protected DocumentModel root;
 
-    @Inject
-    protected RuntimeHarness harness;
 
     @Before
     public void setUp() throws Exception {
@@ -94,16 +91,15 @@ public class TestFileManagerVersioning {
     }
 
     @Test
+    @Deploy(TEST_BUNDLE+":"+INCORRECT_XML)
     public void testIncorrectVersioningOption() throws Exception {
-        harness.deployContrib(TEST_BUNDLE, INCORRECT_XML);
         assertEquals(VersioningOption.MINOR, service.getVersioningOption());
         assertFalse(service.doVersioningAfterAdd());
-        harness.undeployContrib(TEST_BUNDLE, INCORRECT_XML);
     }
 
     @Test
+    @Deploy(TEST_BUNDLE+":"+CONTRIB_XML)
     public void testCreateDocumentNoVersioningAfterAdd() throws Exception {
-        harness.deployContrib(TEST_BUNDLE, CONTRIB_XML);
         assertEquals(VersioningOption.MAJOR, service.getVersioningOption());
         assertFalse(service.doVersioningAfterAdd());
 
@@ -131,12 +127,11 @@ public class TestFileManagerVersioning {
         assertTrue(doc.isCheckedOut());
         assertEquals(2, coreSession.getVersions(docRef).size());
         assertEquals("2.0+", doc.getVersionLabel());
-        harness.undeployContrib(TEST_BUNDLE, CONTRIB_XML);
     }
 
     @Test
+    @Deploy(TEST_BUNDLE+":"+CONTRIB2_XML)
     public void testCreateDocumentVersioningAfterAdd() throws Exception {
-        harness.deployContrib(TEST_BUNDLE, CONTRIB2_XML);
         assertEquals(VersioningOption.MINOR, service.getVersioningOption());
         assertTrue(service.doVersioningAfterAdd());
 
@@ -164,7 +159,6 @@ public class TestFileManagerVersioning {
         assertFalse(doc.isCheckedOut());
         assertEquals(3, coreSession.getVersions(docRef).size());
         assertEquals("0.3", doc.getVersionLabel());
-        harness.undeployContrib(TEST_BUNDLE, CONTRIB2_XML);
     }
 
     protected File getTestFile(String relativePath) {

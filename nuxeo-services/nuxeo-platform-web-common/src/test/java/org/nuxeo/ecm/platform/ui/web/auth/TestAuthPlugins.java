@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.platform.ui.web.auth.interfaces.NuxeoAuthPreFilter;
 import org.nuxeo.ecm.platform.ui.web.auth.service.AuthenticationPluginDescriptor;
@@ -46,10 +45,7 @@ public class TestAuthPlugins extends NXRuntimeTestCase {
     private PluggableAuthenticationService authService;
 
     @Override
-    @Before
     public void setUp() throws Exception {
-        super.setUp();
-
         deployContrib(WEB_BUNDLE, "OSGI-INF/authentication-framework.xml");
         deployContrib(WEB_BUNDLE, "OSGI-INF/authentication-contrib.xml");
     }
@@ -83,6 +79,7 @@ public class TestAuthPlugins extends NXRuntimeTestCase {
     @Test
     public void testDescriptorMerge() throws Exception {
         deployBundle(WEB_BUNDLE_TEST);
+        applyInlineDeployments();
         PluggableAuthenticationService service = getAuthService();
         AuthenticationPluginDescriptor plugin = service.getDescriptor("ANONYMOUS_AUTH");
 
@@ -96,6 +93,7 @@ public class TestAuthPlugins extends NXRuntimeTestCase {
     public void preFilterCanBeDisabled() throws Exception {
         deployContrib(WEB_BUNDLE_TEST, "OSGI-INF/test-prefilter.xml");
         deployContrib(WEB_BUNDLE_TEST, "OSGI-INF/test-prefilter-disable.xml");
+        applyInlineDeployments();
         getAuthService().initPreFilters();
         List<NuxeoAuthPreFilter> filters = getAuthService().getPreFilters();
 

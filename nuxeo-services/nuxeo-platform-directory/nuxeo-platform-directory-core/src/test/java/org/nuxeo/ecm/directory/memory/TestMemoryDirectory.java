@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
@@ -64,13 +63,13 @@ public class TestMemoryDirectory extends NXRuntimeTestCase {
     static final String SCHEMA_NAME = "myschema";
 
     @Override
-    @Before
     public void setUp() throws Exception {
-        super.setUp();
-
         deployBundle("org.nuxeo.ecm.core.schema");
         deployContrib("org.nuxeo.ecm.directory.core.tests", "test-schema.xml");
+    }
 
+    @Override
+    protected void postSetUp() throws Exception {
         MemoryDirectoryDescriptor descr = new MemoryDirectoryDescriptor();
         descr.name = "mydir";
         descr.schemaName = SCHEMA_NAME;
@@ -507,6 +506,9 @@ public class TestMemoryDirectory extends NXRuntimeTestCase {
         descr.schemaSet = new HashSet<>(Arrays.asList("i"));
 
         deployBundle("org.nuxeo.ecm.directory");
+        applyInlineDeployments();
+        postSetUp();
+
         DirectoryService service = Framework.getService(DirectoryService.class);
         service.registerDirectoryDescriptor(descr);
 

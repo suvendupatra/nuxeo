@@ -47,8 +47,8 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 
 /**
  * @author Anahide Tchertchian
@@ -66,7 +66,7 @@ public class TestPageProviderService {
     private static final String FOO = "foo";
 
     @Inject
-    protected RuntimeHarness harness;
+    protected HotDeployer deployer;
 
     @Inject
     protected CoreSession coreSession;
@@ -113,19 +113,16 @@ public class TestPageProviderService {
         assertEquals("File", def.getSearchDocumentType());
 
         // test override
-        harness.deployContrib("org.nuxeo.ecm.platform.query.api.test", "test-pageprovider-override-contrib.xml");
-        try {
-            def = service.getPageProviderDefinition("CURRENT_DOCUMENT_CHILDREN_WITH_SEARCH_DOCUMENT");
-            assertNotNull(def);
-            assertEquals("CURRENT_DOCUMENT_CHILDREN_WITH_SEARCH_DOCUMENT", def.getName());
-            assertNull(def.getWhereClause().getFixedPart());
-            assertEquals(1, def.getSortInfos().size());
-            assertEquals("dc:description", def.getSortInfos().get(0).getSortColumn());
-            assertFalse(def.getSortInfos().get(0).getSortAscending());
-            assertEquals("File2", def.getSearchDocumentType());
-        } finally {
-            harness.undeployContrib("org.nuxeo.ecm.platform.query.api.test", "test-pageprovider-override-contrib.xml");
-        }
+        deployer.deploy("org.nuxeo.ecm.platform.query.api.test:test-pageprovider-override-contrib.xml");
+        service = Framework.getService(PageProviderService.class);
+        def = service.getPageProviderDefinition("CURRENT_DOCUMENT_CHILDREN_WITH_SEARCH_DOCUMENT");
+        assertNotNull(def);
+        assertEquals("CURRENT_DOCUMENT_CHILDREN_WITH_SEARCH_DOCUMENT", def.getName());
+        assertNull(def.getWhereClause().getFixedPart());
+        assertEquals(1, def.getSortInfos().size());
+        assertEquals("dc:description", def.getSortInfos().get(0).getSortColumn());
+        assertFalse(def.getSortInfos().get(0).getSortAscending());
+        assertEquals("File2", def.getSearchDocumentType());
     }
 
     /**
@@ -147,24 +144,17 @@ public class TestPageProviderService {
         assertEquals(2, def.getPageSize());
 
         // test override when disabling page provider
-        harness.deployContrib("org.nuxeo.ecm.platform.query.api.test", "test-pageprovider-override-contrib.xml");
-        try {
-            def = service.getPageProviderDefinition(CURRENT_DOCUMENT_CHILDREN);
-            assertNull(def);
+        deployer.deploy("org.nuxeo.ecm.platform.query.api.test:test-pageprovider-override-contrib.xml");
+        service = Framework.getService(PageProviderService.class);
+        def = service.getPageProviderDefinition(CURRENT_DOCUMENT_CHILDREN);
+        assertNull(def);
 
-            // test override again after, changed page size
-            harness.deployContrib("org.nuxeo.ecm.platform.query.api.test", "test-pageprovider-override-contrib2.xml");
-            try {
-                def = service.getPageProviderDefinition(CURRENT_DOCUMENT_CHILDREN);
-                assertEquals(CURRENT_DOCUMENT_CHILDREN, def.getName());
-                assertEquals(20, def.getPageSize());
-            } finally {
-                harness.undeployContrib("org.nuxeo.ecm.platform.query.api.test",
-                        "test-pageprovider-override-contrib2.xml");
-            }
-        } finally {
-            harness.undeployContrib("org.nuxeo.ecm.platform.query.api.test", "test-pageprovider-override-contrib.xml");
-        }
+        // test override again after, changed page size
+        deployer.deploy("org.nuxeo.ecm.platform.query.api.test:test-pageprovider-override-contrib2.xml");
+        service = Framework.getService(PageProviderService.class);
+        def = service.getPageProviderDefinition(CURRENT_DOCUMENT_CHILDREN);
+        assertEquals(CURRENT_DOCUMENT_CHILDREN, def.getName());
+        assertEquals(20, def.getPageSize());
     }
 
     @Test

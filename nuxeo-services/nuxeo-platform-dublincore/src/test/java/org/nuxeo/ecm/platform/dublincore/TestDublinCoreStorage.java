@@ -59,8 +59,8 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
@@ -81,7 +81,7 @@ public class TestDublinCoreStorage {
     protected CoreSession session;
 
     @Inject
-    protected RuntimeHarness runtimeHarness;
+    protected HotDeployer deployer;
 
     @Before
     public void before() {
@@ -394,8 +394,7 @@ public class TestDublinCoreStorage {
 
     @Test
     public void testCopyDocumentWithResetCoreMetadataByConfiguration() throws Exception {
-        runtimeHarness.deployTestContrib("org.nuxeo.ecm.platform.dublincore.test.reset-creator.contrib",
-                "OSGI-INF/reset-creator-contrib.xml");
+        deployer.deploy("@org.nuxeo.ecm.platform.dublincore.test.reset-creator.contrib:OSGI-INF/reset-creator-contrib.xml");
 
         DocumentModel file = session.createDocument(session.createDocumentModel("/", "file-007", "File"));
         storageConfiguration.maybeSleepToNextSecond();

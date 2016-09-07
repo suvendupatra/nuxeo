@@ -53,7 +53,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 
 @RunWith(FeaturesRunner.class)
 @Features(CoreFeature.class) // to init properties for SQL datasources
@@ -72,9 +71,6 @@ import org.nuxeo.runtime.test.runner.RuntimeHarness;
         "org.nuxeo.ecm.platform.usermanager.tests:test-usermanagerimpl/directory-config.xml", //
 })
 public class TestComputedGroupService {
-
-    @Inject
-    protected RuntimeHarness harness;
 
     @Inject
     protected ComputedGroupsService cgs;
@@ -176,13 +172,9 @@ public class TestComputedGroupService {
     }
 
     @Test
+    @Deploy("org.nuxeo.ecm.platform.usermanager.tests:companycomputedgroups-contrib.xml")
     public void testCompanyComputer() throws Exception {
-        harness.deployContrib("org.nuxeo.ecm.platform.usermanager.tests", "companycomputedgroups-contrib.xml");
-        try {
-            dotTestCompanyComputer();
-        } finally {
-            harness.undeployContrib("org.nuxeo.ecm.platform.usermanager.tests", "companycomputedgroups-contrib.xml");
-        }
+        dotTestCompanyComputer();
     }
 
     public void dotTestCompanyComputer() throws Exception {
