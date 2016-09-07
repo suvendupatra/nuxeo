@@ -152,7 +152,7 @@ public class CoreFeature extends SimpleFeature {
 
     @Override
     public void initialize(FeaturesRunner runner) {
-    	runner.getFeature(RuntimeFeature.class).onHotDeploy(new CoreDeployer());
+    	runner.getFeature(RuntimeFeature.class).registerHandler(new CoreDeployer());
 
         storageConfiguration = new StorageConfiguration(this);
         txFeature = runner.getFeature(TransactionalFeature.class);
@@ -403,12 +403,12 @@ public class CoreFeature extends SimpleFeature {
         return session;
     }
 
-    class CoreDeployer extends HotDeployer.DeployAction {
+    class CoreDeployer extends HotDeployer.ActionHandler {
 		@Override
-		public void deploy(String... contribs) throws Exception {
+		public void exec(String action, String... agrs) throws Exception {
 			waitForAsyncCompletion();
 	        releaseCoreSession();
-			next.deploy(contribs);
+			next.exec(action, agrs);
 			Framework.getService(ReloadService.class).reloadRepository();
 	        createCoreSession();
 

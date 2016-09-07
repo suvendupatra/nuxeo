@@ -34,6 +34,7 @@ import org.nuxeo.runtime.RuntimeServiceListener;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentManager;
 import org.nuxeo.runtime.test.NXRuntimeTestCase;
+import org.nuxeo.runtime.test.runner.HotDeployer.ActionHandler;
 
 import com.google.inject.Binder;
 
@@ -73,8 +74,8 @@ public class RuntimeFeature extends SimpleFeature {
         deployer = new HotDeployer(runner, harness);
     }
 
-    public HotDeployer onHotDeploy(HotDeployer.DeployAction action) {
-		return deployer.onDeploy(action);
+    public HotDeployer registerHandler(ActionHandler handler) {
+		return deployer.addHandler(handler);
 	}
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

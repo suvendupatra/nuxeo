@@ -35,15 +35,16 @@ public class HotDeployer {
 	 * @author bogdan
 	 *
 	 */
-	public static abstract class DeployAction {
-		protected DeployAction next;
+	public static abstract class ActionHandler {
+		protected ActionHandler next;
 		/**
 		 * Can wrap another deploy action with custom code. Should call the next action using
 		 * <code>next.deploy(contribs)</code>
-		 * @param contribs
+		 * @param action
+		 * @param args
 		 * @throws Exception
 		 */
-		public abstract void deploy(String ... contribs) throws Exception;
+		public abstract void exec(String action, String ... args) throws Exception;
 	}
 
 	/**
@@ -51,9 +52,20 @@ public class HotDeployer {
 	 * @author bogdan
 	 *
 	 */
-	class DefaultDeployAction extends DeployAction {
+	class DefaultDeployHandler extends ActionHandler {
+
 		@Override
-		public void deploy(String ... contribs) throws Exception {
+		public void exec(String action, String ... args) throws Exception {
+		    if ("deploy".equals(action)) {
+		        deploy(args);
+		    } else if ("restart".equals(action)) {
+		        restart();
+		    } else if ("reset".equals(action)) {
+		        reset();
+		    }
+		}
+
+		public void deploy(String ...contribs) throws Exception {
 			if (contribs != null && contribs.length > 0) {
 				for (String contrib : contribs) {
 					int i = contrib.indexOf(':');
@@ -73,16 +85,24 @@ public class HotDeployer {
 			// use false to prevent removing the local test method deployments
 			Framework.getRuntime().getComponentManager().refresh(false);
 		}
+
+		public void restart() throws Exception {
+		    Framework.getRuntime().getComponentManager().restart(false);
+		}
+
+		public void reset() throws Exception {
+		    Framework.getRuntime().getComponentManager().restart(true);
+		}
 	}
 
 	protected FeaturesRunner runner;
 	protected RuntimeHarness harness;
-	protected DeployAction head;
+	protected ActionHandler head;
 
 	public HotDeployer(FeaturesRunner runner, RuntimeHarness harness) {
 		this.runner = runner;
 		this.harness = harness;
-		this.head = new DefaultDeployAction();
+		this.head = new DefaultDeployHandler();
 	}
 
 	/**
@@ -91,7 +111,7 @@ public class HotDeployer {
 	 * @param action
 	 * @return
 	 */
-	public HotDeployer onDeploy(DeployAction action) {
+	public HotDeployer addHandler(ActionHandler action) {
 		action.next = this.head;
 		this.head = action;
 		return this;
@@ -106,8 +126,27 @@ public class HotDeployer {
 	 * @throws Exception
 	 */
 	public void deploy(String ... contribs) throws Exception {
-		this.head.deploy(contribs);
+		this.head.exec("deploy", contribs);
 		reinject();
+	}
+
+	/**
+	 * Restart the components and preserve the current registry state.
+	 * @param reset
+	 * @throws Exception
+	 */
+	public void restart() throws Exception {
+	    this.head.exec("restart");
+	    reinject();
+	}
+
+	/**
+	 * Restart the components and revert to the initial registry snapshot if any.
+	 * @throws Exception
+	 */
+	public void reset() throws Exception {
+	    this.head.exec("reset");
+	    reinject();
 	}
 
 	public void reinject() {
