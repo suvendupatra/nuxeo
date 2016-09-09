@@ -293,4 +293,30 @@ public interface ComponentManager {
      * @return
      */
     boolean isStashEmpty();
+
+    /**
+     * Add a listener to be notified on manager actions like start / stop components.
+     * @param listener
+     */
+    void addListener(ComponentManager.Listener listener);
+
+    /**
+     * Remove the component manager listener previously added by {@link #addListener(Listener)}.
+     * If the listener were not added then nothing is done.
+     * @param listener
+     */
+    void removeListener(ComponentManager.Listener listener);
+
+    /**
+     * Listener interface for component manager listeners
+     * @author bogdan
+     *
+     */
+    public static interface Listener {
+        void beforeStart(ComponentManager mgr);
+        void afterStart(ComponentManager mgr);
+        void beforeStop(ComponentManager mgr);
+        void afterStop(ComponentManager mgr);
+    }
+
 }

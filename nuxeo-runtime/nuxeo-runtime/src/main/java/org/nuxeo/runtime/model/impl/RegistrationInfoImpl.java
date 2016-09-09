@@ -331,7 +331,7 @@ public class RegistrationInfoImpl implements RegistrationInfo {
             return;
         }
         state = STARTING;
-    	//TODO fire events?
+        manager.sendEvent(new ComponentEvent(ComponentEvent.STARTING_COMPONENT, this));
         try {
         	if (component != null) {
         		Object ci = component.getInstance();
@@ -340,6 +340,7 @@ public class RegistrationInfoImpl implements RegistrationInfo {
         		}
         	}
         	state = STARTED;
+        	manager.sendEvent(new ComponentEvent(ComponentEvent.COMPONENT_STARTED, this));
         } catch (RuntimeException e) {
         	log.error(String.format("Component %s notification of application started failed: %s",
         			component.getName(), e.getMessage()), e);
@@ -357,7 +358,7 @@ public class RegistrationInfoImpl implements RegistrationInfo {
             return;
         }
         state = STOPPING;
-        // TODO no events are fired for now
+        manager.sendEvent(new ComponentEvent(ComponentEvent.STOPPING_COMPONENT, this));
         if (component != null) {
         	Object ci = component.getInstance();
         	if (ci instanceof Component) {
@@ -365,6 +366,7 @@ public class RegistrationInfoImpl implements RegistrationInfo {
         	}
         }
         state = ACTIVATED;
+        manager.sendEvent(new ComponentEvent(ComponentEvent.COMPONENT_STOPPED, this));
     }
 
     public synchronized void activate() {

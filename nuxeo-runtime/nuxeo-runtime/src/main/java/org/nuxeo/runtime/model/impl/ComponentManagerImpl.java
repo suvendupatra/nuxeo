@@ -57,7 +57,12 @@ public class ComponentManagerImpl implements ComponentManager {
     // extensions
     protected final Map<ComponentName, Set<Extension>> pendingExtensions;
 
-    private ListenerList listeners;
+    private ListenerList compListeners;
+
+    /**
+     * Manager listeners. Listen too events like start stop restart etc.
+     */
+    private MyListeners listeners;
 
     private final Map<String, RegistrationInfoImpl> services;
 
@@ -84,7 +89,8 @@ public class ComponentManagerImpl implements ComponentManager {
     public ComponentManagerImpl(RuntimeService runtime) {
         reg = new ComponentRegistry();
         pendingExtensions = new HashMap<ComponentName, Set<Extension>>();
-        listeners = new ListenerList();
+        compListeners = new ListenerList();
+        listeners = new MyListeners();
         services = new ConcurrentHashMap<String, RegistrationInfoImpl>();
         blacklist = new HashSet<String>();
         stash = new ArrayList<RegistrationInfoImpl>();
@@ -156,8 +162,9 @@ public class ComponentManagerImpl implements ComponentManager {
 
     @Override
     public synchronized void shutdown() {
-        ShutdownTask.shutdown(this);
-        listeners = null;
+        //ShutdownTask.shutdown(this);
+        stop();
+        compListeners = null;
         reg.destroy();
         reg = null;
         snapshot = null;
@@ -253,11 +260,21 @@ public class ComponentManagerImpl implements ComponentManager {
 
     @Override
     public void addComponentListener(ComponentListener listener) {
-        listeners.add(listener);
+        compListeners.add(listener);
     }
 
     @Override
     public void removeComponentListener(ComponentListener listener) {
+        compListeners.remove(listener);
+    }
+
+    @Override
+    public void addListener(ComponentManager.Listener listener) {
+        listeners.add(listener);
+    }
+
+    @Override
+    public void removeListener(ComponentManager.Listener listener) {
         listeners.remove(listener);
     }
 
@@ -306,7 +323,7 @@ public class ComponentManagerImpl implements ComponentManager {
 
     void sendEvent(ComponentEvent event) {
         log.debug("Dispatching event: " + event);
-        Object[] listeners = this.listeners.getListeners();
+        Object[] listeners = this.compListeners.getListeners();
         for (Object listener : listeners) {
             ((ComponentListener) listener).handleEvent(event);
         }
@@ -417,6 +434,8 @@ public class ComponentManagerImpl implements ComponentManager {
     		return false;
     	}
 
+    	listeners.beforeStart();
+
     	List<RegistrationInfoImpl> ris = new ArrayList<RegistrationInfoImpl>();
     	// first activate resolved components
     	for (RegistrationInfoImpl ri : reg.resolved.values()) {
@@ -435,6 +454,8 @@ public class ComponentManagerImpl implements ComponentManager {
 
     	this.started = ris;
 
+    	listeners.afterStart();
+
     	return true;
     }
 
@@ -443,6 +464,8 @@ public class ComponentManagerImpl implements ComponentManager {
     	if (this.started == null) {
     		return false;
     	}
+
+    	listeners.beforeStop();
 
     	try {
     		List<RegistrationInfoImpl> list = this.started;
@@ -465,6 +488,8 @@ public class ComponentManagerImpl implements ComponentManager {
     	} finally {
     		this.started = null;
     	}
+
+    	listeners.afterStop();
 
     	return true;
     }
@@ -563,6 +588,45 @@ public class ComponentManagerImpl implements ComponentManager {
             }
             return cmp;
         }
+    }
+
+
+    protected class MyListeners {
+
+        protected ListenerList listeners = new ListenerList();
+
+        public void add(ComponentManager.Listener listener) {
+            listeners.add(listener);
+        }
+
+        public void remove(ComponentManager.Listener listener) {
+            listeners.remove(listener);
+        }
+
+        public void beforeStart() {
+            for (Object listener : listeners.getListeners()) {
+                ((ComponentManager.Listener)listener).beforeStart(ComponentManagerImpl.this);
+            }
+        }
+
+        public void afterStart() {
+            for (Object listener : listeners.getListeners()) {
+                ((ComponentManager.Listener)listener).afterStart(ComponentManagerImpl.this);
+            }
+        }
+
+        public void beforeStop() {
+            for (Object listener : listeners.getListeners()) {
+                ((ComponentManager.Listener)listener).beforeStop(ComponentManagerImpl.this);
+            }
+        }
+
+        public void afterStop() {
+            for (Object listener : listeners.getListeners()) {
+                ((ComponentManager.Listener)listener).afterStop(ComponentManagerImpl.this);
+            }
+        }
+
     }
 
 }

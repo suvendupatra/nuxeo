@@ -22,7 +22,6 @@ package org.nuxeo.runtime;
 
 import java.io.File;
 import java.net.URL;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,7 +38,6 @@ import org.nuxeo.common.codec.CryptoProperties;
 import org.nuxeo.common.logging.JavaUtilLoggingHelper;
 import org.nuxeo.common.utils.TextTemplate;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.api.ServicePassivator;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.ComponentManager;
 import org.nuxeo.runtime.model.ComponentName;
@@ -79,8 +77,6 @@ public abstract class AbstractRuntimeService implements RuntimeService {
     protected ComponentManager manager;
 
     protected final RuntimeContext context;
-
-    protected final List<RuntimeExtension> extensions = new ArrayList<>();
 
     protected AbstractRuntimeService(DefaultRuntimeContext context) {
         this(context, null);
@@ -130,22 +126,13 @@ public abstract class AbstractRuntimeService implements RuntimeService {
         // NXRuntime.setInstance(this);
         manager = createComponentManager();
         Framework.sendEvent(new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_ABOUT_TO_START, this));
-        ServicePassivator.passivate()
-                         .withQuietDelay(Duration.ofSeconds(0))
-                         .monitor()
-                         .withTimeout(Duration.ofSeconds(0))
-                         .withEnforceMode(false)
-                         .await()
-                         .proceed(() -> {
-                             try {
-                                 doStart();
-                                 startExtensions();
-                             } finally {
+                    try {
+                        doStart();
+                    } finally {
                                  Framework.sendEvent(
                                          new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_STARTED, this));
-                                 isStarted = true;
-                             }
-                         });
+                        isStarted = true;
+                    }
     }
 
     @Override
@@ -157,25 +144,15 @@ public abstract class AbstractRuntimeService implements RuntimeService {
         try {
             log.info("Stopping Nuxeo Runtime service " + getName() + "; version: " + getVersion());
             Framework.sendEvent(new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP, this));
-            getComponentManager().stop(); // stop components
-            ServicePassivator.passivate()
-                             .withQuietDelay(Duration.ofSeconds(0))
-                             .monitor()
-                             .withTimeout(Duration.ofSeconds(0))
-                             .withEnforceMode(false)
-                             .await()
-                             .proceed(() -> {
-                                 try {
-                                     stopExtensions();
-                                     doStop();
-                                     manager.shutdown();
-                                 } finally {
-                                     isStarted = false;
+                        try {
+                manager.shutdown();
+                            doStop();
+                        } finally {
+                            isStarted = false;
                                      Framework.sendEvent(
                                              new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_STOPPED, this));
-                                     manager = null;
-                                 }
-                             });
+                            manager = null;
+                        }
         } finally {
             JavaUtilLoggingHelper.reset();
             isShuttingDown = false;
@@ -277,18 +254,6 @@ public abstract class AbstractRuntimeService implements RuntimeService {
         return context;
     }
 
-    protected void startExtensions() {
-        for (RuntimeExtension ext : extensions) {
-            ext.start();
-        }
-    }
-
-    protected void stopExtensions() {
-        for (RuntimeExtension ext : extensions) {
-            ext.stop();
-        }
-    }
-
     @Override
     public <T> T getService(Class<T> serviceClass) {
         return manager.getService(serviceClass);
@@ -328,28 +293,28 @@ public abstract class AbstractRuntimeService implements RuntimeService {
         Collection<ComponentName> unstartedRegistrations = manager.getActivatingRegistrations();
         unstartedRegistrations.addAll(manager.getStartFailureRegistrations());
         msg.append(hr)
-           .append("\n= Component Loading Status: Pending: ")
-           .append(pendingRegistrations.size())
+                .append("\n= Component Loading Status: Pending: ")
+                .append(pendingRegistrations.size())
            .append(" / Missing: ")
            .append(missingRegistrations.size())
-           .append(" / Unstarted: ")
-           .append(unstartedRegistrations.size())
-           .append(" / Total: ")
+                .append(" / Unstarted: ")
+                .append(unstartedRegistrations.size())
+                .append(" / Total: ")
            .append(manager.getRegistrations().size())
-           .append('\n');
+                .append('\n');
         for (Entry<ComponentName, Set<ComponentName>> e : pendingRegistrations.entrySet()) {
             msg.append("  * ").append(e.getKey()).append(" requires ").append(e.getValue()).append('\n');
         }
         for (Entry<ComponentName, Set<Extension>> e : missingRegistrations.entrySet()) {
             msg.append("  * ")
-               .append(e.getKey())
+                    .append(e.getKey())
                .append(" references missing ")
                .append(e.getValue()
                         .stream()
                         .map(ext -> "target=" + ext.getTargetComponent().getName() + ";point="
                                 + ext.getExtensionPoint())
                         .collect(Collectors.toList()))
-               .append('\n');
+                    .append('\n');
         }
         for (ComponentName componentName : unstartedRegistrations) {
             msg.append("  - ").append(componentName).append('\n');

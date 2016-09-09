@@ -69,6 +69,14 @@ public class ComponentEvent implements Serializable {
 
     public static final int EXTENSION_PENDING = 11;
 
+    public static final int STARTING_COMPONENT = 12;
+
+    public static final int STOPPING_COMPONENT = 13;
+
+    public static final int COMPONENT_STARTED = 14;
+
+    public static final int COMPONENT_STOPPED = 15;
+
     public static final int COMPONENT_EVENT = 100;
 
     private static final long serialVersionUID = 8936615866437064000L;
@@ -115,6 +123,14 @@ public class ComponentEvent implements Serializable {
             return "COMPONENT_DEACTIVATED";
         case COMPONENT_UNREGISTERED:
             return "COMPONENT_UNREGISTERED";
+        case STARTING_COMPONENT:
+            return "STARTING_COMPONENT";
+        case STOPPING_COMPONENT:
+            return "STOPPING_COMPONENT";
+        case COMPONENT_STARTED:
+            return "COMPONENT_STARTED";
+        case COMPONENT_STOPPED:
+            return "COMPONENT_STOPPED";
         case COMPONENT_EVENT:
             return "COMPONENT_EVENT";
         case EXTENSION_REGISTERED:

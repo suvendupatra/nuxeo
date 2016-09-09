@@ -20,14 +20,18 @@ package org.nuxeo.runtime.model.impl;
 
 import java.util.Set;
 
+import org.nuxeo.runtime.model.ComponentManager;
 import org.nuxeo.runtime.model.ComponentName;
 import org.nuxeo.runtime.model.RegistrationInfo;
 
 /**
  * Deactivate components in the proper order to avoid exceptions at shutdown.
- * 
+ *
+ * @deprecated it is useless to unregister components. Components are stopped and deactivated by the {@link ComponentManager#stop()}
+ *
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
+@Deprecated
 public class ShutdownTask {
 
     final static void shutdown(ComponentManagerImpl mgr) {
