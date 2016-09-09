@@ -79,7 +79,8 @@ public class TestDescriptorOverride {
         assertEquals("test-users.csv", config.getDataFileName());
         assertEquals(1, config.getTableReferences().length);
 
-        // TODO if we don't remove the inline contribs the SQLDirectoryFeature will throw an exception? May be a bug?
+        // TODO if we don't remove the inline contribs the SQLDirectoryFeature will throw an exception
+        // The feature should instead add a deployer handler to cleanup directories when restarting ...
         deployer.reset();
     }
 

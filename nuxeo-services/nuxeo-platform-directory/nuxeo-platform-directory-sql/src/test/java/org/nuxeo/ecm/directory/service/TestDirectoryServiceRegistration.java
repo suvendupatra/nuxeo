@@ -65,7 +65,8 @@ public class TestDirectoryServiceRegistration {
         dir = directoryService.getDirectory("userDirectory");
         assertTrue(dir instanceof MemoryDirectory);
 
-        // TODO if we don't remove the inline contribs the SQLDirectoryFeature will throw an exception? May be a bug?
+        // TODO if we don't remove the inline contribs the SQLDirectoryFeature will throw an exception
+        // The feature should instead add a deployer handler to cleanup directories when restarting ...
         deployer.reset(); // this will restart and remove the inline contributions
 
     }
