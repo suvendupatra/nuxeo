@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2007 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2008 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  *
  * Contributors:
- *     Nuxeo - initial API and implementation
+ *     <a href="mailto:at@nuxeo.com">Anahide Tchertchian</a>
  *
- * $Id: JOOoConvertPluginImpl.java 18651 2007-05-13 20:28:53Z sfermigier $
+ * $Id$
  */
 
 package org.nuxeo.ecm.directory.ldap;
@@ -24,8 +24,7 @@ package org.nuxeo.ecm.directory.ldap;
 import org.junit.Ignore;
 import org.nuxeo.ecm.directory.ldap.LDAPDirectoryFeature.UseExternalServer;
 
-// Ignore External server tests
-@Ignore
-@UseExternalServer("TestDirectoriesWithExternalOpenLDAPWithBBB.xml")
-public class TestLDAPSessionBBB extends TestLDAPSession {
+@Ignore // ignore external tests
+@UseExternalServer("TestDirectoriesWithExternalOpenLDAP-override.xml")
+public class TestExternalLDAPSessionWithMissingId extends TestLDAPSessionWithMissingId {
 }
