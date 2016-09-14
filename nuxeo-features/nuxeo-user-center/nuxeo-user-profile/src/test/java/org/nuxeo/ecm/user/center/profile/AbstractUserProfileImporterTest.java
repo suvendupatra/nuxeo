@@ -31,7 +31,7 @@ import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.platform.usermanager.UserManager;
 import org.nuxeo.ecm.platform.usermanager.exceptions.UserAlreadyExistsException;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 
 import com.google.inject.Inject;
 
@@ -44,7 +44,7 @@ public abstract class AbstractUserProfileImporterTest {
     protected CoreFeature coreFeature;
 
     @Inject
-    protected RuntimeHarness harness;
+    protected HotDeployer deployer;
 
     @Inject
     protected CoreSession session;
