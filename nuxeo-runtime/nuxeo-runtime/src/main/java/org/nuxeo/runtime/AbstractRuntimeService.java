@@ -126,13 +126,13 @@ public abstract class AbstractRuntimeService implements RuntimeService {
         // NXRuntime.setInstance(this);
         manager = createComponentManager();
         Framework.sendEvent(new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_ABOUT_TO_START, this));
-                    try {
-                        doStart();
-                    } finally {
-                                 Framework.sendEvent(
-                                         new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_STARTED, this));
-                        isStarted = true;
-                    }
+        try {
+            doStart();
+        } finally {
+            Framework.sendEvent(
+                    new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_STARTED, this));
+            isStarted = true;
+        }
     }
 
     @Override
@@ -144,15 +144,15 @@ public abstract class AbstractRuntimeService implements RuntimeService {
         try {
             log.info("Stopping Nuxeo Runtime service " + getName() + "; version: " + getVersion());
             Framework.sendEvent(new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP, this));
-                        try {
+            try {
                 manager.shutdown();
-                            doStop();
-                        } finally {
-                            isStarted = false;
-                                     Framework.sendEvent(
-                                             new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_STOPPED, this));
-                            manager = null;
-                        }
+                doStop();
+            } finally {
+                isStarted = false;
+                Framework.sendEvent(
+                        new RuntimeServiceEvent(RuntimeServiceEvent.RUNTIME_STOPPED, this));
+                manager = null;
+            }
         } finally {
             JavaUtilLoggingHelper.reset();
             isShuttingDown = false;

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -55,7 +56,7 @@ public class ComponentManagerImpl implements ComponentManager {
 
     // must use an ordered Set to avoid loosing the order of the pending
     // extensions
-    protected final Map<ComponentName, Set<Extension>> pendingExtensions;
+    protected final ConcurrentMap<ComponentName, Set<Extension>> pendingExtensions;
 
     private ListenerList compListeners;
 
@@ -64,9 +65,9 @@ public class ComponentManagerImpl implements ComponentManager {
      */
     private MyListeners listeners;
 
-    private final Map<String, RegistrationInfoImpl> services;
+    private final ConcurrentMap<String, RegistrationInfoImpl> services;
 
-    protected Set<String> blacklist;
+    protected volatile Set<String> blacklist;
 
     /**
      *  the list of started components (sorted according to the start order).
@@ -79,16 +80,16 @@ public class ComponentManagerImpl implements ComponentManager {
      */
     protected volatile List<RegistrationInfoImpl> stash;
 
-    protected ComponentRegistry reg;
+    protected volatile ComponentRegistry reg;
 
-    protected ComponentRegistry snapshot;
+    protected volatile ComponentRegistry snapshot;
 
     protected volatile boolean isFlushingStash = false;
     protected volatile boolean changed = false;
 
     public ComponentManagerImpl(RuntimeService runtime) {
         reg = new ComponentRegistry();
-        pendingExtensions = new HashMap<ComponentName, Set<Extension>>();
+        pendingExtensions = new ConcurrentHashMap<ComponentName, Set<Extension>>();
         compListeners = new ListenerList();
         listeners = new MyListeners();
         services = new ConcurrentHashMap<String, RegistrationInfoImpl>();
@@ -101,13 +102,13 @@ public class ComponentManagerImpl implements ComponentManager {
     }
 
     @Override
-    public synchronized Collection<RegistrationInfo> getRegistrations() {
-        return new ArrayList<RegistrationInfo>(reg.getComponents());
+    public Collection<RegistrationInfo> getRegistrations() {
+        return reg.getComponents();
     }
 
     @Override
-    public synchronized Collection<ComponentName> getResolvedRegistrations() {
-    	return new ArrayList<ComponentName>(reg.resolved.keySet());
+    public Collection<ComponentName> getResolvedRegistrations() {
+    	return reg.getResolvedNames();
     }
 
     @Override
@@ -131,31 +132,40 @@ public class ComponentManagerImpl implements ComponentManager {
         return missing;
     }
 
-    public synchronized Collection<ComponentName> getNeededRegistrations() {
+    /**
+     * Get the needed component names. The returned set is not a copy
+     * @return
+     */
+    public Set<ComponentName> getNeededRegistrations() {
         return pendingExtensions.keySet();
     }
 
-    public synchronized Collection<Extension> getPendingExtensions(ComponentName name) {
+    /**
+     * Get the pending extensions. The returned set is not a copy
+     * @param name
+     * @return
+     */
+    public Set<Extension> getPendingExtensions(ComponentName name) {
         return pendingExtensions.get(name);
     }
 
     @Override
-    public synchronized RegistrationInfo getRegistrationInfo(ComponentName name) {
+    public RegistrationInfo getRegistrationInfo(ComponentName name) {
         return reg.getComponent(name);
     }
 
     @Override
-    public synchronized boolean isRegistered(ComponentName name) {
+    public boolean isRegistered(ComponentName name) {
         return reg.contains(name);
     }
 
     @Override
-    public synchronized int size() {
+    public int size() {
         return reg.size();
     }
 
     @Override
-    public synchronized ComponentInstance getComponent(ComponentName name) {
+    public ComponentInstance getComponent(ComponentName name) {
         RegistrationInfo ri = reg.getComponent(name);
         return ri != null ? ri.getComponent() : null;
     }
@@ -308,10 +318,7 @@ public class ComponentManagerImpl implements ComponentManager {
     }
 
     protected Collection<ComponentName> getRegistrations(int state) {
-        RegistrationInfo[] comps = null;
-        synchronized (this) {
-            comps = reg.getComponentsArray();
-        }
+        RegistrationInfo[] comps = reg.getComponentsArray();
         Collection<ComponentName> ret = new ArrayList<ComponentName>();
         for (RegistrationInfo ri : comps) {
             if (ri.getState() == state) {
@@ -340,8 +347,7 @@ public class ComponentManagerImpl implements ComponentManager {
             ri.component.registerExtension(extension);
             sendEvent(new ComponentEvent(ComponentEvent.EXTENSION_REGISTERED,
                     ((ComponentInstanceImpl) extension.getComponent()).ri, extension));
-        } else {
-            // put the extension in the pending queue
+        } else { // put the extension in the pending queue
             if (log.isDebugEnabled()) {
                 log.debug("Enqueue contributed extension to pending queue: " + extension);
             }
@@ -419,7 +425,7 @@ public class ComponentManagerImpl implements ComponentManager {
     }
 
     @Override
-    public synchronized String[] getServices() {
+    public String[] getServices() {
         return services.keySet().toArray(new String[services.size()]);
     }
 
@@ -433,6 +439,8 @@ public class ComponentManagerImpl implements ComponentManager {
     	if (this.started != null) {
     		return false;
     	}
+
+    	log.info("Starting Nuxeo Components");
 
     	listeners.beforeStart();
 
@@ -456,6 +464,8 @@ public class ComponentManagerImpl implements ComponentManager {
 
     	listeners.afterStart();
 
+    	log.info("Nuxeo Components Started");
+
     	return true;
     }
 
@@ -464,6 +474,8 @@ public class ComponentManagerImpl implements ComponentManager {
     	if (this.started == null) {
     		return false;
     	}
+
+    	log.info("Stopping Nuxeo Components");
 
     	listeners.beforeStop();
 
@@ -490,6 +502,8 @@ public class ComponentManagerImpl implements ComponentManager {
     	}
 
     	listeners.afterStop();
+
+    	log.info("Nuxeo Components Stopped");
 
     	return true;
     }
@@ -558,12 +572,14 @@ public class ComponentManagerImpl implements ComponentManager {
 
     protected synchronized void restoreSnapshot() {
     	if (changed && snapshot != null) {
+    	    log.info("Restoring components snapshot");
     		this.reg = new ComponentRegistry(snapshot);
     		changed = false;
     	}
     }
 
     protected synchronized void applyStash(List<RegistrationInfoImpl> stash) {
+        log.info("Applying stashed components");
     	isFlushingStash = true;
     	try {
         	for (RegistrationInfoImpl ri : stash) {
