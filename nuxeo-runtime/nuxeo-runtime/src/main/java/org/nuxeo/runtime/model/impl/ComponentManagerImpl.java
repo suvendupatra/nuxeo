@@ -444,6 +444,9 @@ public class ComponentManagerImpl implements ComponentManager {
 
     	listeners.beforeStart();
 
+    	// make sure we start with a clean pending registry
+    	pendingExtensions.clear();
+
     	List<RegistrationInfoImpl> ris = new ArrayList<RegistrationInfoImpl>();
     	// first activate resolved components
     	for (RegistrationInfoImpl ri : reg.resolved.values()) {
@@ -493,10 +496,11 @@ public class ComponentManagerImpl implements ComponentManager {
     		for (int i=reverseResolved.length-1;i>=0;i--) {
     			RegistrationInfoImpl ri = reverseResolved[i];
     			if (ri.isActivated()) {
-    				ri.deactivate();
+    				ri.deactivate(false);
     			}
     		}
-
+    		// make sure the pending extension map is empty (since we didn't unregistered extensions by calling ri.deactivate(false)
+    		pendingExtensions.clear();
     	} finally {
     		this.started = null;
     	}
