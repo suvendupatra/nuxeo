@@ -78,6 +78,10 @@ public class RuntimeFeature extends SimpleFeature {
 		return deployer.addHandler(handler);
 	}
 
+    public boolean unregisterHandler(ActionHandler handler) {
+        return deployer.removeHandler(handler);
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void configure(FeaturesRunner runner, Binder binder) {

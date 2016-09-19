@@ -118,6 +118,30 @@ public class HotDeployer {
 	}
 
 	/**
+	 * Remove the given handler if already registered
+	 * @param handler
+	 * @return
+	 */
+	public boolean removeHandler(ActionHandler handler) {
+	    ActionHandler p = null;
+	    ActionHandler h = this.head;
+	    while (h != null && h != handler) {
+	        p = h;
+	        h = h.next;
+	    }
+	    if (h != null) {
+	        if (p == null) {
+	            this.head = h.next;
+	        } else {
+	            p.next = h.next;
+	        }
+	        h.next = null;
+	        return true;
+	    }
+	    return false;
+	}
+
+	/**
 	 * Deploy the given list of contributions. The format is [@]bundleId[:componentPath].
 	 * If no component path is specified then the bundle identified by the bundleId part will be deployed.
 	 * If a componentPath is given {@link RuntimeHarness#deployContrib(String,String)} will be used to deploy the contribution.
