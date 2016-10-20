@@ -32,7 +32,7 @@ import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.OperationType;
-import org.nuxeo.ecm.automation.core.impl.ChainTypeImpl;
+import org.nuxeo.ecm.automation.core.impl.OperationChainTypeImpl;
 import org.nuxeo.ecm.automation.core.impl.InvokableMethod;
 import org.nuxeo.ecm.automation.jaxrs.io.operations.ExecutionRequest;
 import org.nuxeo.ecm.automation.server.AutomationServer;
@@ -68,8 +68,8 @@ public class OperationAdapter extends DefaultAdapter {
             OperationType operationType = service.getOperation(oid);
 
             // If chain, taking the first operation to do the input lookup after
-            if (operationType instanceof ChainTypeImpl) {
-                OperationChain chain = ((ChainTypeImpl) operationType).getChain();
+            if (operationType instanceof OperationChainTypeImpl) {
+                OperationChain chain = ((OperationChainTypeImpl) operationType).getChain();
                 if (!chain.getOperations().isEmpty()) {
                     operationType = service.getOperation(chain.getOperations().get(0).id());
                 } else {

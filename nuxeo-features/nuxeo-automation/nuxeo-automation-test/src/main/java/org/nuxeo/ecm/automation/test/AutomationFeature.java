@@ -63,7 +63,7 @@ public class AutomationFeature extends SimpleFeature {
 
         @Override
         public OperationContext get() {
-            return AutomationFeature.this.getContext();
+            return getContext();
         }
 
     }
@@ -72,7 +72,7 @@ public class AutomationFeature extends SimpleFeature {
 
         @Override
         public OperationCallback get() {
-            return AutomationFeature.this.getTracer();
+            return getTracer();
         }
 
     }
@@ -82,7 +82,7 @@ public class AutomationFeature extends SimpleFeature {
             CoreSession session = coreFeature.getCoreSession();
             context = new OperationContext(session);
             if (tracer != null) {
-                context.addChainCallback(tracer);
+                context.setCallback(tracer);
             }
         }
         return context;
@@ -90,9 +90,9 @@ public class AutomationFeature extends SimpleFeature {
 
     protected OperationCallback getTracer() {
         if (tracer == null) {
-            tracer = tracerFactory.newTracer("*");
+            tracer = tracerFactory.newTracer();
             if (context != null) {
-                context.addChainCallback(tracer);
+                context.setCallback(tracer);
             }
         }
         return tracer;

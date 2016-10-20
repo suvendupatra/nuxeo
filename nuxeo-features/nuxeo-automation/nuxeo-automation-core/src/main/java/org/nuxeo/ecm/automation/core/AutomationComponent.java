@@ -48,7 +48,7 @@ import org.nuxeo.ecm.automation.core.events.EventHandler;
 import org.nuxeo.ecm.automation.core.events.EventHandlerRegistry;
 import org.nuxeo.ecm.automation.core.exception.ChainExceptionFilter;
 import org.nuxeo.ecm.automation.core.exception.ChainExceptionImpl;
-import org.nuxeo.ecm.automation.core.impl.ChainTypeImpl;
+import org.nuxeo.ecm.automation.core.impl.OperationChainTypeImpl;
 import org.nuxeo.ecm.automation.core.impl.OperationServiceImpl;
 import org.nuxeo.ecm.automation.core.trace.TracerFactory;
 import org.nuxeo.ecm.platform.forms.layout.api.WidgetDefinition;
@@ -149,7 +149,7 @@ public class AutomationComponent extends DefaultComponent {
             OperationChainContribution occ = (OperationChainContribution) contribution;
             // Register the chain
             try {
-                OperationType docChainType = new ChainTypeImpl(service,
+                OperationType docChainType = new OperationChainTypeImpl(service,
                         occ.toOperationChain(contributor.getContext().getBundle()), occ);
                 service.putOperation(docChainType, occ.replace);
             } catch (OperationException e) {

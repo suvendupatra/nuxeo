@@ -67,7 +67,7 @@ public class TestChainException {
     CoreSession session;
 
     @Inject
-    TracerFactory factory;
+    TracerFactory traces;
 
     public static class Populate implements RepositoryInit {
 
@@ -110,15 +110,15 @@ public class TestChainException {
     @Test
     public void testAutomationChainException() throws Exception {
         // Activate trace mode to verify if exception chain has been run
-        if (!factory.getRecordingState()) {
-            factory.toggleRecording();
+        if (!traces.getRecordingState()) {
+            traces.toggleRecording();
         }
 
         // verify for a simple catch chain if it has been run
         OperationContext ctx = new OperationContext(session);
         ctx.setInput(doc);
         service.run(ctx, "anothercontributedchain");
-        assertNotNull(factory.getTrace("chainExceptionA"));
+        assertNotNull(traces.getTrace("chainExceptionA"));
 
         ctx = new OperationContext(session);
         ctx.setInput(src);
@@ -126,13 +126,13 @@ public class TestChainException {
         // Verify that result is documentmodel from operation3 of
         // chainExceptionA
         // Verify if chainExceptionA has been run after contributedchain failure
-        assertNotNull(factory.getTrace("chainExceptionA"));
+        assertNotNull(traces.getTrace("chainExceptionA"));
 
         ctx = new OperationContext(session);
         ctx.setInput(doc);
         // Verify that result is documentref from operation2 of chainExceptionB
         assertTrue(service.run(ctx, "contributedchain") instanceof DocumentRef);
         // Verify if chainExceptionB has been run after contributedchain failure
-        assertNotNull(factory.getTrace("chainExceptionB"));
+        assertNotNull(traces.getTrace("chainExceptionB"));
     }
 }

@@ -147,29 +147,21 @@ public class AutomationServerComponent extends DefaultComponent implements Autom
         return map.values().toArray(new RestBinding[map.size()]);
     }
 
-    protected String getBindingKey(RestBinding binding) {
-        return binding.isChain() ? Constants.CHAIN_ID_PREFIX + binding.getName() : binding.getName();
-    }
-
     @Override
     public synchronized void addBinding(RestBinding binding) {
-        String key = getBindingKey(binding);
-        bindings.put(key, binding);
+        bindings.put((binding.isChain() ? Constants.CHAIN_ID_PREFIX : "") + binding.name, binding);
         lookup = null;
     }
 
     @Override
     public synchronized RestBinding removeBinding(RestBinding binding) {
-        RestBinding result = bindings.remove(getBindingKey(binding));
+        RestBinding result = bindings.remove(binding.name);
         lookup = null;
         return result;
     }
 
     @Override
     public boolean accept(String name, boolean isChain, HttpServletRequest req) {
-        if (isChain) {
-            name = "Chain." + name;
-        }
         RestBinding binding = lookup().get(name);
         if (binding != null) {
             if (binding.isDisabled()) {

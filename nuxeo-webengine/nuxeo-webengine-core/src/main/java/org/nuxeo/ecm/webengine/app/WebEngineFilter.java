@@ -37,10 +37,8 @@ import org.nuxeo.ecm.platform.web.common.ServletHelper;
 import org.nuxeo.ecm.platform.web.common.requestcontroller.filter.BufferingHttpServletResponse;
 import org.nuxeo.ecm.webengine.WebEngine;
 import org.nuxeo.ecm.webengine.model.WebContext;
-import org.nuxeo.ecm.webengine.model.impl.AbstractWebContext;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-import org.nuxeo.runtime.transaction.TransactionRuntimeException;
 
 /**
  * This filter must be declared after the nuxeo authentication filter since it needs an authentication info. The session
@@ -59,13 +57,6 @@ public class WebEngineFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        initIfNeeded();
-    }
-
-    protected void initIfNeeded() {
-        if (engine != null || Framework.getRuntime() == null) {
-            return;
-        }
         engine = Framework.getLocalService(WebEngine.class);
     }
 
@@ -75,96 +66,25 @@ public class WebEngineFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
-            ServletException {
-        initIfNeeded();
-        if (request instanceof HttpServletRequest) {
-            HttpServletRequest req = (HttpServletRequest) request;
-            HttpServletResponse resp = (HttpServletResponse) response;
-            Config config = new Config(req);
-            AbstractWebContext ctx = initRequest(config, req, resp);
-            if (config.txStarted) {
-                resp = new BufferingHttpServletResponse(resp);
-            }
-            boolean completedAbruptly = true;
-            try {
-                preRequest(req, resp);
-                chain.doFilter(request, resp);
-                postRequest(req, resp);
-                completedAbruptly = false;
-            } finally {
-                if (completedAbruptly) {
-                    TransactionHelper.setTransactionRollbackOnly();
-                }
-                try {
-                    cleanup(config, ctx, req, resp);
-                } catch (TransactionRuntimeException e) {
-                    // commit failed, report this to the client before stopping buffering
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-                    throw e;
-                } finally {
-                    if (config.txStarted) {
-                        ((BufferingHttpServletResponse) resp).stopBuffering();
-                    }
-                }
-            }
-        } else {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        if (!(request instanceof HttpServletRequest)) {
             chain.doFilter(request, response);
+            return;
         }
-    }
-
-    public void preRequest(HttpServletRequest request, HttpServletResponse response) {
-        // need to set the encoding of characters manually
-        if (request.getCharacterEncoding() == null) {
-            try {
-                request.setCharacterEncoding("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public void postRequest(HttpServletRequest request, HttpServletResponse response) {
-        // check if the target resource don't want automatic headers to be
-        // inserted
-        if (null != request.getAttribute("org.nuxeo.webengine.DisableAutoHeaders")) {
-            // insert automatic headers
-            response.addHeader("Pragma", "no-cache");
-            response.addHeader("Cache-Control", "no-cache");
-            response.addHeader("Cache-Control", "no-store");
-            response.addHeader("Cache-Control", "must-revalidate");
-            response.addHeader("Expires", "0");
-            response.setDateHeader("Expires", 0); // prevents caching
-        }
-    }
-
-    public AbstractWebContext initRequest(Config config, HttpServletRequest request, HttpServletResponse response) {
-        initTx(config, request);
-        // user session is registered even for static resources - because some
-        // static resources are served by JAX-RS resources that needs a user
-        // session
-        DefaultContext ctx = new DefaultContext((HttpServletRequest) request);
-        request.setAttribute(WebContext.class.getName(), ctx);
-        return ctx;
-    }
-
-    public void cleanup(Config config, AbstractWebContext ctx, HttpServletRequest request, HttpServletResponse response) {
+        Config config = new Config((HttpServletRequest) request, (HttpServletResponse)response);
+        boolean completedAbruptly = true;
         try {
-            closeTx(config, request);
+            config.preRequest();
+            chain.doFilter(config.context.getRequest(), config.context.getResponse());
+            config.postRequest();
+            completedAbruptly = false;
+        } catch (IOException | ServletException | RuntimeException error) {
+            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    error.getMessage());
+            throw error;
         } finally {
-            request.removeAttribute(WebContext.class.getName());
-        }
-    }
-
-    public void initTx(Config config, HttpServletRequest req) {
-        if (!config.isStatic && !TransactionHelper.isTransactionActive()) {
-            config.txStarted = ServletHelper.startTransaction(req);
-        }
-    }
-
-    public void closeTx(Config config, HttpServletRequest req) {
-        if (config.txStarted) {
-            TransactionHelper.commitOrRollbackTransaction();
+            config.cleanup(completedAbruptly);
         }
     }
 
@@ -176,13 +96,19 @@ public class WebEngineFilter implements Filter {
 
         String pathInfo;
 
-        public Config(HttpServletRequest req) {
+        DefaultContext context;
+
+        public Config(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             pathInfo = req.getPathInfo();
             if (pathInfo == null || pathInfo.length() == 0) {
                 pathInfo = "/";
             }
             String spath = req.getServletPath();
             isStatic = spath.contains("/skin") || pathInfo.contains("/skin/");
+            txStarted = !isStatic && !TransactionHelper.isTransactionActive()
+                    && ServletHelper.startTransaction(req);
+            context = new DefaultContext(req, txStarted ? new BufferingHttpServletResponse(resp) : resp);
+            req.setAttribute(WebContext.class.getName(), context);
         }
 
         @Override
@@ -194,6 +120,53 @@ public class WebEngineFilter implements Filter {
             sb.append("\nStatic:");
             sb.append(isStatic);
             return sb.toString();
+        }
+
+        protected void cleanup(boolean completedAbruptly) throws IOException {
+            context.getRequest().removeAttribute(WebContext.class.getName());
+
+            if (!txStarted) {
+                return;
+            }
+
+            if (completedAbruptly) {
+                TransactionHelper.setTransactionRollbackOnly();
+            }
+            try {
+                TransactionHelper.commitOrRollbackTransaction();
+            } catch (RuntimeException cause) {
+                context.getResponse().sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, cause.getMessage());
+            } finally {
+                ((BufferingHttpServletResponse) context.getResponse()).stopBuffering();
+            }
+        }
+
+        protected void preRequest() {
+            // need to set the encoding of characters manually
+            HttpServletRequest request = context.getRequest();
+            if (request.getCharacterEncoding() == null) {
+                try {
+                    request.setCharacterEncoding("UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        protected void postRequest() {
+            HttpServletRequest request = context.getRequest();
+            HttpServletResponse response = context.getResponse();
+            // check if the target resource don't want automatic headers to be
+            // inserted
+            if (null != request.getAttribute("org.nuxeo.webengine.DisableAutoHeaders")) {
+                // insert automatic headers
+                response.addHeader("Pragma", "no-cache");
+                response.addHeader("Cache-Control", "no-cache");
+                response.addHeader("Cache-Control", "no-store");
+                response.addHeader("Cache-Control", "must-revalidate");
+                response.addHeader("Expires", "0");
+                response.setDateHeader("Expires", 0); // prevents caching
+            }
         }
     }
 }

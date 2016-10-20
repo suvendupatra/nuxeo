@@ -16,7 +16,7 @@
  * Contributors:
  *     Thierry Delprat <tdelprat@nuxeo.com>
  */
-package org.nuxeo.automation.scripting.internals.operation;
+package org.nuxeo.automation.scripting.internals;
 
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
@@ -27,7 +27,7 @@ import org.nuxeo.ecm.automation.OperationDocumentation;
  * @since 7.2
  */
 @XObject("scriptedOperation")
-public class ScriptingOperationDescriptor {
+public class AutomationScriptingOperationDescriptor {
 
     @XNode("@id")
     protected String id;
@@ -51,7 +51,7 @@ public class ScriptingOperationDescriptor {
     protected OperationDocumentation.Param[] params = new OperationDocumentation.Param[0];
 
     @XNode("script")
-    protected String script;
+    protected String source;
 
     public String[] getAliases() {
         return aliases;
@@ -79,10 +79,6 @@ public class ScriptingOperationDescriptor {
 
     public OperationDocumentation.Param[] getParams() {
         return params;
-    }
-
-    public String getScript() {
-        return script;
     }
 
 }

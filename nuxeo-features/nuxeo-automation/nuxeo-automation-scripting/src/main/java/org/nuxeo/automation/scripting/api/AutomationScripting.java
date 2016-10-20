@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2015 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2016 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Contributors:
- *     Thierry Delprat <tdelprat@nuxeo.com>
  */
-package org.nuxeo.automation.scripting.internals.operation;
+package org.nuxeo.automation.scripting.api;
 
+import java.io.InputStream;
 import java.util.Map;
 
-/**
- * @since 7.2
- */
-public interface ScriptingOperationInterface {
+import org.nuxeo.ecm.automation.OperationContext;
+import org.nuxeo.ecm.core.api.CoreSession;
 
-    Object run(Object input, Map<String, Object> parameters);
+public interface AutomationScripting {
+
+    public interface Context extends AutoCloseable, Map<String,Object> {
+
+        Object run(InputStream input);
+
+        <T> T handleof(InputStream input, Class<T> typeof);
+
+        <T> T adapt(Class<T> typeof);
+    }
+
+    Context get(CoreSession session);
+
+    Context get(OperationContext context);
 
 }

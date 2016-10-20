@@ -6,8 +6,7 @@
   <implementation class="org.nuxeo.automation.scripting.internals.AutomationScriptingComponent" />
 
   <service>
-      <provide interface="org.nuxeo.automation.scripting.api.AutomationScriptingService" />
-      <provide interface="javax.script.ScriptEngineManager"/>
+      <provide interface="org.nuxeo.automation.scripting.api.AutomationScripting" />
   </service>
 
   <extension-point name="operation">
@@ -29,7 +28,7 @@
     </documentation>
     
     <object
-      class="org.nuxeo.automation.scripting.internals.operation.ScriptingOperationDescriptor" />
+      class="org.nuxeo.automation.scripting.internals.AutomationScriptingOperationDescriptor" />
   </extension-point>
 
 </component>

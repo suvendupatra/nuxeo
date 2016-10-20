@@ -20,15 +20,18 @@ package org.nuxeo.ecm.automation;
 
 /**
  * Throw it from an operation to interrupt a chain execution. The chain terminates silently (without throwing an
- * exception) and the <code>output</code> object is returned as the chain output.
+ * exception) and the <code>input</code> object is returned as the chain output.
  * <p>
  * Also, you can set the <code>rollback</code> argument to true to rollback the current transaction.
  *
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
-@SuppressWarnings("serial")
 public class ExitException extends OperationException {
 
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
     protected Object output;
 
     public ExitException() {

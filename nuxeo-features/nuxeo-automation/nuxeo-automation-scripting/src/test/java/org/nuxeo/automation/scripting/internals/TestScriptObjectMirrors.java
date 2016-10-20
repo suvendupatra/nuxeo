@@ -35,6 +35,7 @@ import javax.script.ScriptException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.nuxeo.automation.scripting.internals.wrappers.ScriptObjectMirrors;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 

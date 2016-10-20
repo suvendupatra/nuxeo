@@ -22,8 +22,6 @@
 package org.nuxeo.ecm.webengine.model.impl;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
@@ -47,39 +45,29 @@ import org.nuxeo.ecm.webengine.model.WebContext;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.scripting.ScriptFile;
 
+import com.sun.jersey.api.core.HttpContext;
+import com.sun.jersey.spi.uri.rules.UriRuleContext;
+
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
  */
 public class ModuleRoot extends DefaultObject implements ModuleResource {
 
+    @Context
     protected HttpServletRequest request;
+
+    protected UriRuleContext ruleContext;
 
     protected UriInfo uriInfo;
 
     protected HttpHeaders httpHeaders;
 
     @Context
-    public void setUriInfo(UriInfo info) {
-        this.uriInfo = info;
-        if (request != null && httpHeaders != null) {
-            init();
-        }
-    }
-
-    @Context
-    public void setHttpHeaders(HttpHeaders headers) {
-        this.httpHeaders = headers;
-        if (request != null && uriInfo != null) {
-            init();
-        }
-    }
-
-    @Context
-    public void setHttpRequest(HttpServletRequest request) {
-        this.request = request;
-        if (uriInfo != null && httpHeaders != null) {
-            init();
-        }
+    public void setContext(HttpContext context) {
+        uriInfo = context.getUriInfo();
+        ruleContext = (UriRuleContext)context;
+        httpHeaders = context.getRequest();
+        init();
     }
 
     private void init() {
@@ -90,6 +78,7 @@ public class ModuleRoot extends DefaultObject implements ModuleResource {
         }
         ctx.setHttpHeaders(httpHeaders);
         ctx.setUriInfo(uriInfo);
+        ctx.setRuleContext(ruleContext);
         Module module = findModule(ctx);
         ResourceType type = module.getType(getClass().getAnnotation(WebObject.class).type());
         ctx.setModule(module);
@@ -140,10 +129,12 @@ public class ModuleRoot extends DefaultObject implements ModuleResource {
      * @param doc the document
      * @return the link corresponding to that object
      */
+    @Override
     public String getLink(DocumentModel doc) {
         return new StringBuilder().append(getPath()).append("/@nxdoc/").append(doc.getId()).toString();
     }
 
+    @Override
     public Object handleError(WebApplicationException e) {
         return e;
     }

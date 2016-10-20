@@ -19,6 +19,7 @@
 package org.nuxeo.ecm.automation.jaxrs.io.operations;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
@@ -41,7 +42,9 @@ public class RestOperationContext extends OperationContext {
      *
      * @since 7.1
      */
-    protected int httpStatus;
+    protected int httpStatus = HttpServletResponse.SC_OK;
+
+    protected final RequestContext requestContext = RequestContext.getActiveContext();
 
     /**
      * Must be called before context execution.
@@ -57,6 +60,13 @@ public class RestOperationContext extends OperationContext {
                 }
             }
         });
+    }
+
+    /**
+     * @since 8.4
+     */
+    public RequestContext getRequestContext() {
+        return requestContext;
     }
 
     /**
@@ -81,5 +91,6 @@ public class RestOperationContext extends OperationContext {
     public void dispose() {
         // do nothing
     }
+
 
 }
