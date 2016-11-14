@@ -11,7 +11,7 @@
       <installationDirective>You need to install pdftotext.</installationDirective>
     </command>
 
-    <command enabled="true" name="ai2pdf">
+    <command enabled="true" name="ps2pdf">
       <commandLine>gs</commandLine>
       <winCommand>gswin64c</winCommand>
       <parameterString>-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=#{targetFilePath} #{sourceFilePath}</parameterString>

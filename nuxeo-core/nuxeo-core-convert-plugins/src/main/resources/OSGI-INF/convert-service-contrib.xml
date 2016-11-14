@@ -121,7 +121,7 @@
       </parameters>
     </converter>
 
-    <converter name="ai2pdf2text">
+    <converter name="ps2pdf2text">
       <sourceMimeType>application/postscript</sourceMimeType>
       <sourceMimeType>application/eps</sourceMimeType>
       <sourceMimeType>application/x-eps</sourceMimeType>
@@ -130,7 +130,7 @@
       <sourceMimeType>application/illustrator</sourceMimeType>
       <destinationMimeType>text/plain</destinationMimeType>
       <conversionSteps>
-        <subconverter>ai2pdf</subconverter>
+        <subconverter>ps2pdf</subconverter>
         <subconverter>pdf2text</subconverter>
       </conversionSteps>
     </converter>
