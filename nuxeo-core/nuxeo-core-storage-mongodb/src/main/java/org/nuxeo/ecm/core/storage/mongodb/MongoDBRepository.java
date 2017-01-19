@@ -62,7 +62,6 @@ import java.util.stream.Collectors;
 
 import javax.resource.spi.ConnectionManager;
 
-import com.mongodb.MongoClientOptions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -89,14 +88,11 @@ import org.nuxeo.ecm.core.storage.dbs.DBSStateFlattener;
 import org.nuxeo.runtime.api.Framework;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
 import com.mongodb.QueryOperators;
-import com.mongodb.ServerAddress;
 import com.mongodb.WriteResult;
 
 /**
@@ -113,8 +109,6 @@ public class MongoDBRepository extends DBSRepositoryBase {
     private static final Long ONE = Long.valueOf(1);
 
     private static final Long MINUS_ONE = Long.valueOf(-11);
-
-    public static final String DB_DEFAULT = "nuxeo";
 
     public static final String MONGODB_ID = "_id";
 
@@ -146,10 +140,6 @@ public class MongoDBRepository extends DBSRepositoryBase {
 
     protected static final String COUNTER_FIELD = "seq";
 
-    protected static final int MONGODB_OPTION_CONNECTION_TIMEOUT_MS = 30000;
-
-    protected static final int MONGODB_OPTION_SOCKET_TIMEOUT_MS = 60000;
-
     protected MongoClient mongoClient;
 
     protected DBCollection coll;
@@ -176,7 +166,7 @@ public class MongoDBRepository extends DBSRepositoryBase {
     public MongoDBRepository(ConnectionManager cm, MongoDBRepositoryDescriptor descriptor) {
         super(cm, descriptor.name, descriptor);
         try {
-            mongoClient = newMongoClient(descriptor);
+            mongoClient = MongoDBConnectionHelper.newMongoClient(descriptor);
             coll = getCollection(descriptor, mongoClient);
             countersColl = getCountersCollection(descriptor, mongoClient);
         } catch (UnknownHostException e) {
@@ -208,47 +198,13 @@ public class MongoDBRepository extends DBSRepositoryBase {
     }
 
     // used also by unit tests
-    public static MongoClient newMongoClient(MongoDBRepositoryDescriptor descriptor) throws UnknownHostException {
-        MongoClient ret = null;
-        String server = descriptor.server;
-        if (StringUtils.isBlank(server)) {
-            throw new NuxeoException("Missing <server> in MongoDB repository descriptor");
-        }
-        MongoClientOptions.Builder optionsBuilder = MongoClientOptions.builder()
-                // Can help to prevent firewall disconnects inactive connection, option not available from URI
-                .socketKeepAlive(true)
-                // don't wait for ever by default, can be overridden using URI options
-                .connectTimeout(MONGODB_OPTION_CONNECTION_TIMEOUT_MS)
-                .socketTimeout(MONGODB_OPTION_SOCKET_TIMEOUT_MS)
-                .description("Nuxeo");
-        if (server.startsWith("mongodb://")) {
-            // allow mongodb:// URI syntax for the server, to pass everything in one string
-            ret = new MongoClient(new MongoClientURI(server, optionsBuilder));
-        } else {
-            ret = new MongoClient(new ServerAddress(server), optionsBuilder.build());
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("MongoClient initialized with options: " + ret.getMongoClientOptions().toString());
-        }
-        return ret;
-    }
-
-    protected static DBCollection getCollection(MongoClient mongoClient, String dbname, String collection) {
-        if (StringUtils.isBlank(dbname)) {
-            dbname = DB_DEFAULT;
-        }
-        DB db = mongoClient.getDB(dbname);
-        return db.getCollection(collection);
-    }
-
-    // used also by unit tests
     public static DBCollection getCollection(MongoDBRepositoryDescriptor descriptor, MongoClient mongoClient) {
-        return getCollection(mongoClient, descriptor.dbname, descriptor.name);
+        return MongoDBConnectionHelper.getCollection(mongoClient, descriptor.dbname, descriptor.name);
     }
 
     // used also by unit tests
     public static DBCollection getCountersCollection(MongoDBRepositoryDescriptor descriptor, MongoClient mongoClient) {
-        return getCollection(mongoClient, descriptor.dbname, descriptor.name + ".counters");
+        return MongoDBConnectionHelper.getCollection(mongoClient, descriptor.dbname, descriptor.name + ".counters");
     }
 
     protected String keyToBson(String key) {
