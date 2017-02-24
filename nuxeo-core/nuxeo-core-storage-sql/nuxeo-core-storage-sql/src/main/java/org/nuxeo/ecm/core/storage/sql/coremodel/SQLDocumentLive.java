@@ -321,6 +321,11 @@ public class SQLDocumentLive extends BaseDocument<Node>implements SQLDocument {
         return (T) value;
     }
 
+    @Override
+    public String getChangeToken() {
+        return (String) getPropertyValue(Model.MAIN_CHANGE_TOKEN_PROP);
+    }
+
     /*
      * ----- LifeCycle -----
      */

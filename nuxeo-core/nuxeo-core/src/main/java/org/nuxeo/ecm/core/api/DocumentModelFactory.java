@@ -220,6 +220,13 @@ public class DocumentModelFactory {
 
         boolean changed = false;
 
+        // change token
+        String token = (String) docModel.getContextData(CoreSession.CHANGE_TOKEN);
+        String currentToken = doc.getChangeToken();
+        if (token != null && currentToken != null && !currentToken.equals(token)) {
+            throw new ConcurrentUpdateException(doc.getUUID());
+        }
+
         // facets added/removed
         Set<String> instanceFacets = ((DocumentModelImpl) docModel).instanceFacets;
         Set<String> instanceFacetsOrig = ((DocumentModelImpl) docModel).instanceFacetsOrig;
