@@ -2763,25 +2763,47 @@
       <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
-        <version>1.6.1</version>
+        <version>3.6.2</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>com.tngtech.jgiven</groupId>
         <artifactId>jgiven-core</artifactId>
-        <version>0.12.1</version>
+        <version>0.14.1</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>com.tngtech.jgiven</groupId>
         <artifactId>jgiven-junit</artifactId>
-        <version>0.12.1</version>
+        <version>0.14.1</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>com.tngtech.java</groupId>
         <artifactId>junit-dataprovider</artifactId>
-        <version>1.10.0</version>
+        <version>1.12.0</version>
+      </dependency>
+      <dependency>
+        <groupId>net.serenity-bdd</groupId>
+        <artifactId>serenity-screenplay</artifactId>
+        <version>1.2.3-rc.3</version> 
+        <exclusions>
+          <exclusion>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>net.serenity-bdd</groupId>
+        <artifactId>serenity-screenplay-webdriver</artifactId>
+        <version>1.2.3-rc.3</version>
+        <exclusions>
+          <exclusion>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.fusesource.jansi</groupId>

@@ -262,8 +262,8 @@ public class FeaturesRunner extends BlockJUnit4ClassRunner {
         public void evaluate() throws Throwable {
             initialize();
             start();
-            beforeRun();
             injector = injector.createChildInjector(loader.onModule());
+            beforeRun();
             try {
                 next.evaluate();
             } finally {
@@ -309,12 +309,6 @@ public class FeaturesRunner extends BlockJUnit4ClassRunner {
     protected List<TestRule> classRules() {
         final RulesFactory<ClassRule, TestRule> factory = new RulesFactory<>(ClassRule.class, TestRule.class);
 
-        factory.withRule(new TestRule() {
-            @Override
-            public Statement apply(Statement base, Description description) {
-                return new BeforeClassStatement(base);
-            }
-        }).withRules(super.classRules());
         loader.apply(Direction.FORWARD, new Callable() {
 
             @Override
@@ -322,6 +316,12 @@ public class FeaturesRunner extends BlockJUnit4ClassRunner {
                 factory.withRules(holder.testClass, null);
             }
         });
+        factory.withRule(new TestRule() {
+            @Override
+            public Statement apply(Statement base, Description description) {
+                return new BeforeClassStatement(base);
+            }
+        }).withRules(super.classRules());
 
         return factory.build();
     }
