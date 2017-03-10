@@ -499,7 +499,7 @@ public class CoreOperationsTest {
         assertEquals("0.0", ctx.get("versionLabel_1"));
         assertEquals("1.0", ctx.get("versionLabel_2"));
         assertEquals("1.1", ctx.get("versionLabel_3"));
-        assertEquals("1.1+", doc.getVersionLabel());
+        assertEquals("1.2", doc.getVersionLabel());
         assertEquals("MyDoc4", doc.getTitle());
     }
 
@@ -513,13 +513,13 @@ public class CoreOperationsTest {
         chain.add(FetchContextDocument.ID);
         chain.add(CreateDocument.ID).set("type", "Note").set("name", "note").set("properties", "dc:title=MyDoc");
         chain.add(SetVar.ID).set("name", "versionLabel_1").set("value", expr);
-        // update document to test if version change (it should not change)
+        // update document to test if version change
         chain.add(SetDocumentProperty.ID).set("xpath", "dc:title").set("value", "MyDoc2");
 
         DocumentModel doc = (DocumentModel) service.run(ctx, chain);
 
         assertEquals("0.0", ctx.get("versionLabel_1"));
-        assertEquals("0.0", doc.getVersionLabel());
+        assertEquals("0.1", doc.getVersionLabel());
         assertEquals("MyDoc2", doc.getTitle());
     }
 
@@ -536,7 +536,7 @@ public class CoreOperationsTest {
         chain.add(SetDocumentLifeCycle.ID).set("value", "approve");
         chain.add(CheckInDocument.ID).set("version", "major").set("comment", "yo").set("versionVarName", "ver");
         chain.add(SetVar.ID).set("name", "versionLabel_2").set("value", expr);
-        // update document to test if version change (it should not change)
+        // update document to test if version change
         chain.add(SetDocumentProperty.ID).set("xpath", "dc:title").set("value", "MyDoc2");
         chain.add(SetVar.ID).set("name", "versionLabel_3").set("value", expr);
         chain.add(SetDocumentProperty.ID).set("xpath", "dc:title").set("value", "MyDoc3");
@@ -545,8 +545,8 @@ public class CoreOperationsTest {
 
         assertEquals("0.0", ctx.get("versionLabel_1"));
         assertEquals("1.0", ctx.get("versionLabel_2"));
-        assertEquals("1.0+", ctx.get("versionLabel_3"));
-        assertEquals("1.0+", doc.getVersionLabel());
+        assertEquals("1.1", ctx.get("versionLabel_3"));
+        assertEquals("1.2", doc.getVersionLabel());
         assertEquals("MyDoc3", doc.getTitle());
         DocumentRef ver = (DocumentRef) ctx.get("ver");
         assertNotNull(ver);
