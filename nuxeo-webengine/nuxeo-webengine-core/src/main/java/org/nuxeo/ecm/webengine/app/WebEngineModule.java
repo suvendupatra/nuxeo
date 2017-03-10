@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,13 +31,17 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Context;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.webengine.WebEngine;
 import org.nuxeo.ecm.webengine.jaxrs.ApplicationFactory;
+import org.nuxeo.ecm.webengine.jaxrs.context.RequestContext;
 import org.nuxeo.ecm.webengine.jaxrs.scan.Scanner;
 import org.nuxeo.ecm.webengine.loader.WebLoader;
 import org.nuxeo.ecm.webengine.model.Module;
@@ -47,7 +52,11 @@ import org.nuxeo.ecm.webengine.model.impl.ModuleConfiguration;
 import org.nuxeo.ecm.webengine.model.impl.ModuleManager;
 import org.osgi.framework.Bundle;
 
+import com.sun.jersey.core.spi.component.ComponentContext;
+import com.sun.jersey.core.spi.component.ComponentScope;
 import com.sun.jersey.server.impl.inject.ServerInjectableProviderContext;
+import com.sun.jersey.spi.inject.Injectable;
+import com.sun.jersey.spi.inject.InjectableProvider;
 
 /**
  * @author <a href="mailto:bs@nuxeo.com">Bogdan Stefanescu</a>
@@ -238,6 +247,15 @@ public class WebEngineModule extends Application implements ApplicationFactory {
         for (Class<?> root : cfg.roots) {
             set.add(root);
         }
+
+        return set;
+    }
+
+    @Override
+    public Set<Object> getSingletons() {
+        HashSet<Object> set = new HashSet<Object>();
+        set.add(new HttpServletRequestProvider());
+        set.add(new HttpServletResponseProvider());
         return set;
     }
 
@@ -253,6 +271,50 @@ public class WebEngineModule extends Application implements ApplicationFactory {
     public Application getApplication(Bundle bundle, Map<String, String> args) throws ReflectiveOperationException,
             IOException {
         return WebEngineModuleFactory.getApplication(this, bundle, args);
+    }
+
+    public static class HttpServletRequestProvider implements InjectableProvider<Context, Type>, Injectable<HttpServletRequest> {
+        @Override
+        public HttpServletRequest getValue() {
+            RequestContext ctx = RequestContext.getActiveContext();
+            return ctx != null ? ctx.getRequest() : null;
+        }
+
+        @Override
+        public ComponentScope getScope() {
+            return ComponentScope.PerRequest;
+        }
+
+        @Override
+        public Injectable<HttpServletRequest> getInjectable(ComponentContext ic, Context a, Type c) {
+            if (!c.equals(HttpServletRequest.class)) {
+                return null;
+            }
+            return this;
+        }
+
+    }
+
+    public static class HttpServletResponseProvider implements InjectableProvider<Context, Type>, Injectable<HttpServletResponse> {
+        @Override
+        public HttpServletResponse getValue() {
+            RequestContext ctx = RequestContext.getActiveContext();
+            return ctx != null ? ctx.getResponse() : null;
+        }
+
+        @Override
+        public ComponentScope getScope() {
+            return ComponentScope.PerRequest;
+        }
+
+        @Override
+        public Injectable<HttpServletResponse> getInjectable(ComponentContext ic, Context a, Type c) {
+            if (!c.equals(HttpServletResponse.class)) {
+                return null;
+            }
+            return this;
+        }
+
     }
 
 }
