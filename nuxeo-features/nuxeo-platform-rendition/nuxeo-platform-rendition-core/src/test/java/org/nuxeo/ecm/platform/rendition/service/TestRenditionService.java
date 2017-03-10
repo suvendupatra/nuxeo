@@ -730,7 +730,7 @@ public class TestRenditionService {
 
     @Test
     public void shouldStoreLatestNonVersionedRendition() throws Exception {
-        runtimeHarness.deployContrib(RENDITION_CORE, RENDITION_WORKMANAGER_COMPONENT_LOCATION);
+        deployer.deploy(RENDITION_CORE+":"+RENDITION_WORKMANAGER_COMPONENT_LOCATION);
 
         final StorageConfiguration storageConfiguration = coreFeature.getStorageConfiguration();
         final String repositoryName = session.getRepositoryName();
@@ -800,8 +800,6 @@ public class TestRenditionService {
             assertNotNull(rend.getBlob());
             assertTrue(rendition.getBlob().getString().contains(desc));
         }
-
-        runtimeHarness.undeployContrib(RENDITION_CORE, RENDITION_WORKMANAGER_COMPONENT_LOCATION);
     }
 
     protected static class RenditionThread extends Thread {

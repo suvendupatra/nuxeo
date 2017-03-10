@@ -121,6 +121,8 @@ public class NXRuntimeTestCase implements RuntimeHarness {
 
     protected boolean restart = false;
 
+    protected List<String[]> deploymentStack = new ArrayList<>();
+
     /**
      * Whether or not the runtime components were started.
      * This is useful to ensure the runtime is started once.
@@ -224,6 +226,7 @@ public class NXRuntimeTestCase implements RuntimeHarness {
      * @throws Exception
      */
     protected void tearDown() throws Exception {
+        deploymentStack = new ArrayList<>();
     }
 
     /**
@@ -434,6 +437,19 @@ public class NXRuntimeTestCase implements RuntimeHarness {
     }
 
     /**
+     * Deploy a contribution specified as a "bundleName:path" uri
+     * @param uri
+     * @throws Exception
+     */
+    public void deployContrib(String uri) throws Exception {
+        int i = uri.indexOf(':');
+        if (i == -1) {
+            throw new IllegalArgumentException("Invalid deployment URI: "+uri+". Must be of the form bundleSymbolicName:pathInBundleJar");
+        }
+        deployContrib(uri.substring(0, i), uri.substring(i+1));
+    }
+
+    /**
      * Deploy an XML contribution from outside a bundle.
      * <p>
      * This should be used by tests wiling to deploy test contribution as part of a real bundle.
@@ -479,6 +495,14 @@ public class NXRuntimeTestCase implements RuntimeHarness {
             context = runtime.getContext();
         }
         context.undeploy(contrib);
+    }
+
+    public void undeployContrib(String uri) throws Exception {
+        int i = uri.indexOf(':');
+        if (i == -1) {
+            throw new IllegalArgumentException("Invalid deployment URI: "+uri+". Must be of the form bundleSymbolicName:pathInBundleJar");
+        }
+        undeployContrib(uri.substring(0, i), uri.substring(i+1));
     }
 
     protected static boolean isVersionSuffix(String s) {
@@ -645,6 +669,48 @@ public class NXRuntimeTestCase implements RuntimeHarness {
     protected void removeInlineDeployments() {
     	runtime.getComponentManager().reset();
     	runtime.getComponentManager().start();
+    }
+
+    /**
+     * Hot deploy the given components (identified by an URI). All the started components are stopped, the new ones are registered and then all components are started.
+     * You can undeploy these components by calling {@link #popInlineDeployments()}
+     * <p>
+     * A component URI is of the form: bundleSymbolicName:pathToComponentXmlInBundle
+     * @param deploymentUris
+     * @throws Exception
+     */
+    public void pushInlineDeployments(String ... deploymentUris) throws Exception {
+        deploymentStack.add(deploymentUris);
+        for (String uri : deploymentUris) {
+            deployContrib(uri);
+        }
+        applyInlineDeployments();
+    }
+
+    /**
+     * Remove the latest deployed components using {@link #pushInlineDeployments(String...)}
+     * The store
+     */
+    public void popInlineDeployments() throws Exception {
+        if (deploymentStack.isEmpty()) {
+            throw new IllegalStateException("deployment stack is empty");
+        }
+        popInlineDeployments(deploymentStack.size()-1);
+    }
+
+    public void popInlineDeployments(int index) throws Exception {
+        if (index < 0 || index > deploymentStack.size()-1) {
+            throw new IllegalStateException("deployment stack index is invalid: "+index);
+        }
+        deploymentStack.remove(index);
+
+        runtime.getComponentManager().reset();
+        for (String[] ar : deploymentStack) {
+            for (int i=0,len=ar.length; i<len; i++) {
+                deployContrib(ar[i]);
+            }
+        }
+        applyInlineDeployments();
     }
 
 }

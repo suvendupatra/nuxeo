@@ -45,6 +45,8 @@ public class TestDirectoryUIManagerRegistration extends NXRuntimeTestCase {
 
     @Override
     public void setUp() throws Exception {
+        // required by directory
+        deployBundle("org.nuxeo.ecm.core.cache");
         // deploy directory
         deployBundle("org.nuxeo.ecm.directory");
         // deploy directory ui service

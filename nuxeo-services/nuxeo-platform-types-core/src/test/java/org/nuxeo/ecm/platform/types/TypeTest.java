@@ -318,33 +318,47 @@ public class TypeTest extends NXRuntimeTestCase {
         assertFacetsAndSchemas("MyDocType", testFacets, testSchemas);
 
         // deploy ecm contribution to override types
-        deployContrib("org.nuxeo.ecm.platform.types.core.tests", "test-types-override-bundle.xml");
+        pushInlineDeployments("org.nuxeo.ecm.platform.types.core.tests:test-types-override-bundle.xml");
+        postSetUp();
+
         assertSubtypes("MyDocType", testMyDocTypeSubtypes2);
         // subtypes differ for MyDocType2 because ecm override contrib removed MyOtherDocType from typeService
         assertSubtypes("MyDocType2", testMyDocType2Subtypes1, Arrays.asList("MyDocType", "MyHiddenDocType"));
         assertFacetsAndSchemas("MyDocType", testFacets, testSchemas);
 
         // deploy core contribution to override types
-        deployContrib("org.nuxeo.ecm.platform.types.core.tests", "test-core-types-override-bundle.xml");
+        pushInlineDeployments("org.nuxeo.ecm.platform.types.core.tests:test-core-types-override-bundle.xml");
+        postSetUp();
+
         assertSubtypes("MyDocType", testMyDocTypeSubtypes2);
         // subtypes differ for MyDocType2 because ecm override contrib removed MyOtherDocType from typeService
         assertSubtypes("MyDocType2", testMyDocType2Subtypes2, testMyDocType2Subtypes3);
         assertFacetsAndSchemas("MyDocType", testFacets, testSchemas);
 
         // undeploy ecm contribution to override types
-        undeployContrib("org.nuxeo.ecm.platform.types.core.tests", "test-types-override-bundle.xml");
+        //undeployContrib("org.nuxeo.ecm.platform.types.core.tests", "test-types-override-bundle.xml");
+        popInlineDeployments(0);
+        postSetUp();
+
         assertSubtypes("MyDocType", testMyDocTypeSubtypes1);
         assertSubtypes("MyDocType2", testMyDocType2Subtypes2);
         assertFacetsAndSchemas("MyDocType", testFacets, testSchemas);
 
         // undeploy core contribution to override types
-        undeployContrib("org.nuxeo.ecm.platform.types.core.tests", "test-core-types-override-bundle.xml");
+        //undeployContrib("org.nuxeo.ecm.platform.types.core.tests", "test-core-types-override-bundle.xml");
+        popInlineDeployments();
+        postSetUp();
         assertSubtypes("MyDocType", testMyDocTypeSubtypes1);
         assertSubtypes("MyDocType2", testMyDocType2Subtypes1);
         assertFacetsAndSchemas("MyDocType", testFacets, testSchemas);
 
         // undeploy original ecm contribution to override types
+        // a workaround to be able to undeploy a contrib from the snapshot
         undeployContrib("org.nuxeo.ecm.platform.types.core.tests", "test-types-bundle.xml");
+        runtime.getComponentManager().reset();
+        runtime.getComponentManager().start();
+        postSetUp();
+
         assertSubtypes("MyDocType", Collections.emptyList());
         assertSubtypes("MyDocType2", testMyDocType2Subtypes3, Collections.emptyList());
         assertFacetsAndSchemas("MyDocType", testFacets, testSchemas);

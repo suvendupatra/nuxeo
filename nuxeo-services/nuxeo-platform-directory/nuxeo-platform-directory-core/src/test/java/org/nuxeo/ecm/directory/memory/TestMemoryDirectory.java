@@ -505,6 +505,8 @@ public class TestMemoryDirectory extends NXRuntimeTestCase {
         descr.passwordField = "pw";
         descr.schemaSet = new HashSet<>(Arrays.asList("i"));
 
+        // required by directory service
+        deployBundle("org.nuxeo.ecm.core.cache");
         deployBundle("org.nuxeo.ecm.directory");
         applyInlineDeployments();
         postSetUp();

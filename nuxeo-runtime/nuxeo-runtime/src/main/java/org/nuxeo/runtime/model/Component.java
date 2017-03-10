@@ -63,6 +63,7 @@ public interface Component extends Extensible, TimestampedService {
 
     /**
      * Notify the component that Nuxeo Framework finished starting all Nuxeo bundles.
+     * Implementors must migrate the code of the appicationStarted and move it to {@link Component#start(ComponentContext)} and {@link #stop(ComponentContext)} methods
      * @deprecated since the introduction of {@link Component#start(ComponentContext)} and {@link #stop(ComponentContext)} methods
      */
     @Deprecated

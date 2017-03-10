@@ -52,9 +52,9 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.RuntimeContext;
 import org.nuxeo.runtime.model.impl.DefaultRuntimeContext;
 import org.nuxeo.runtime.test.runner.Deploy;
-import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.LocalDeploy;
 
 @RunWith(FeaturesRunner.class)
@@ -260,7 +260,8 @@ public class TestService {
         assertFalse(ConversionServiceImpl.isCacheEnabled());
 
         // override
-        deploy("OSGI-INF/convert-service-config-override.xml");
+        deployer.deploy("org.nuxeo.ecm.core.convert:OSGI-INF/convert-service-config-override.xml");
+
         assertEquals(34, ConversionServiceImpl.getGCIntervalInMinutes());
         assertEquals(10, ConversionServiceImpl.getMaxCacheSizeInKB());
         assertTrue(ConversionServiceImpl.isCacheEnabled());

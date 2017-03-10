@@ -27,8 +27,6 @@ import org.nuxeo.automation.scripting.internals.operation.ScriptingOperationDesc
 import org.nuxeo.automation.scripting.internals.operation.ScriptingOperationTypeImpl;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationException;
-import org.nuxeo.runtime.RuntimeServiceEvent;
-import org.nuxeo.runtime.RuntimeServiceListener;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
@@ -64,42 +62,34 @@ public class AutomationScriptingComponent extends DefaultComponent {
     }
 
     @Override
-    public void applicationStarted(ComponentContext context) {
-        super.applicationStarted(context);
+    public void start(ComponentContext context) {
         service = new AutomationScriptingServiceImpl();
         AutomationService automation = Framework.getService(AutomationService.class);
-        Framework.addListener(new RuntimeServiceListener() {
-
-            @Override
-            public void handleEvent(RuntimeServiceEvent event) {
-                if (event.id != RuntimeServiceEvent.RUNTIME_ABOUT_TO_STOP) {
-                    return;
-                }
-                Framework.removeListener(this);
-                registry.stream().forEach(contrib -> {
-                    try {
-                        ScriptingOperationTypeImpl type = new ScriptingOperationTypeImpl(service,
-                                automation, contrib);
-                        automation.removeOperation(type);
-                    } catch (OperationException e) {
-                        LogFactory.getLog(AutomationScriptingRegistry.class)
-                                .error("Cannot contribute scripting operation " + contrib.getId());
-                    }
-                });
+        registry.stream().forEach(contrib -> {
+            try {
+                ScriptingOperationTypeImpl type = new ScriptingOperationTypeImpl(service,
+                        automation, contrib);
+                automation.putOperation(type, true);
+            } catch (OperationException e) {
+                LogFactory.getLog(AutomationScriptingRegistry.class)
+                .error("Cannot contribute scripting operation " + contrib.getId());
             }
         });
-        {
-            registry.stream().forEach(contrib -> {
-                try {
-                    ScriptingOperationTypeImpl type = new ScriptingOperationTypeImpl(service,
-                            automation, contrib);
-                    automation.putOperation(type, true);
-                } catch (OperationException e) {
-                    LogFactory.getLog(AutomationScriptingRegistry.class)
-                            .error("Cannot contribute scripting operation " + contrib.getId());
-                }
-            });
-        }
+    }
+
+    @Override
+    public void stop(ComponentContext context) {
+        AutomationService automation = Framework.getService(AutomationService.class);
+        registry.stream().forEach(contrib -> {
+            try {
+                ScriptingOperationTypeImpl type = new ScriptingOperationTypeImpl(service,
+                        automation, contrib);
+                automation.removeOperation(type);
+            } catch (OperationException e) {
+                LogFactory.getLog(AutomationScriptingRegistry.class)
+                        .error("Cannot contribute scripting operation " + contrib.getId());
+            }
+        });
     }
 
     @Override

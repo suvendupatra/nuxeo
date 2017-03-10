@@ -390,6 +390,9 @@ public class TestSchemaManager extends NXRuntimeTestCase {
     @Test
     public void testGetAllowedSubTypes() throws Exception {
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/CoreTestExtensions.xml");
+        applyInlineDeployments();
+        postSetUp();
+
         Collection<String> subtypes = schemaManager.getAllowedSubTypes("myFolder");
         assertNotNull(subtypes);
         assertEquals(3, subtypes.size());
@@ -413,6 +416,8 @@ public class TestSchemaManager extends NXRuntimeTestCase {
 
         // let's append types to myFolder and override mySpecialFoder
         deployContrib("org.nuxeo.ecm.core.schema.tests", "OSGI-INF/test-merge-doctype.xml");
+        applyInlineDeployments();
+        postSetUp();
 
         subtypes = schemaManager.getAllowedSubTypes("myFolder");
         assertNotNull(subtypes);
